@@ -1,0 +1,261 @@
+package validator
+
+import (
+	"errors"
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
+	"fmt"
+	"reflect"
+	"regexp"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
+)
+
+var Validate = validator.New()
+
+func init() {
+	// Register built-in tags เป็น custom
+	// (ลบ RegisterValidation สำหรับ built-in tag เช่น required, email, max, min, len, oneof, numeric, alphanum, url, uuid, eq, ne, gt, gte, lt, lte, number, integer, credit_card, isbn, ip, hostname ออก)
+	Validate.RegisterValidation("datetime", validateDateFormat)
+	Validate.RegisterValidation("boolean", validateBoolean)
+	Validate.RegisterValidation("base64", validateBase64)
+	Validate.RegisterValidation("contains", validateContains)
+	Validate.RegisterValidation("excludes", validateExcludes)
+	Validate.RegisterValidation("startswith", validateStartsWith)
+	Validate.RegisterValidation("endswith", validateEndsWith)
+	Validate.RegisterValidation("unique", validateUnique)
+	Validate.RegisterValidation("string", validateString)
+	Validate.RegisterValidation("array", validateArray)
+	Validate.RegisterValidation("file", validateFile)
+	Validate.RegisterValidation("dir", validateDir)
+	Validate.RegisterValidation("iso3166", validateISO3166)
+	Validate.RegisterValidation("iso4217", validateISO4217)
+	Validate.RegisterValidation("timezone", validateTimezone)
+	Validate.RegisterValidation("country_code", validateCountryCode)
+	Validate.RegisterValidation("currency_code", validateCurrencyCode)
+	Validate.RegisterValidation("phone", validatePhone)
+	Validate.RegisterValidation("mobile", validateMobile)
+	Validate.RegisterValidation("tel", validateTel)
+	Validate.RegisterValidation("thai_id", validateThaiID)
+	Validate.RegisterValidation("no_special", validateNoSpecial)
+	Validate.RegisterValidation("no_sql_inject", validateNoSQLInjection)
+	RegisterGinCustomValidators()
+}
+
+// ตัวอย่างฟังก์ชัน custom validator (dummy)
+func validateDateFormat(fl validator.FieldLevel) bool   { return true }
+func validateBoolean(fl validator.FieldLevel) bool      { return true }
+func validateBase64(fl validator.FieldLevel) bool       { return true }
+func validateContains(fl validator.FieldLevel) bool     { return true }
+func validateExcludes(fl validator.FieldLevel) bool     { return true }
+func validateStartsWith(fl validator.FieldLevel) bool   { return true }
+func validateEndsWith(fl validator.FieldLevel) bool     { return true }
+func validateUnique(fl validator.FieldLevel) bool       { return true }
+func validateString(fl validator.FieldLevel) bool       { return true }
+func validateArray(fl validator.FieldLevel) bool        { return true }
+func validateFile(fl validator.FieldLevel) bool         { return true }
+func validateDir(fl validator.FieldLevel) bool          { return true }
+func validateISO3166(fl validator.FieldLevel) bool      { return true }
+func validateISO4217(fl validator.FieldLevel) bool      { return true }
+func validateTimezone(fl validator.FieldLevel) bool     { return true }
+func validateCountryCode(fl validator.FieldLevel) bool  { return true }
+func validateCurrencyCode(fl validator.FieldLevel) bool { return true }
+func validatePhone(fl validator.FieldLevel) bool        { return true }
+func validateMobile(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	// ต้องเป็นตัวเลข 9-10 หลัก และขึ้นต้นด้วย 0
+	re := regexp.MustCompile(`^0[0-9]{8,9}$`)
+	return re.MatchString(value)
+}
+func validateTel(fl validator.FieldLevel) bool    { return true }
+func validateThaiID(fl validator.FieldLevel) bool { return true }
+
+// validateNoSpecial: ห้ามมีอักษรพิเศษ (อนุญาต a-z, A-Z, 0-9, เว้นวรรค)
+func validateNoSpecial(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	re := regexp.MustCompile(`^[a-zA-Z0-9 ]*$`)
+	return re.MatchString(value)
+}
+
+// validateNoSQLInjection: ไม่อนุญาตอักขระที่เสี่ยง SQL Injection
+func validateNoSQLInjection(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	blockPattern := regexp.MustCompile(`['";\\%<>=\(\)\|]|--|/\*|\*/`)
+	return !blockPattern.MatchString(value)
+}
+
+// ValidateStruct ตรวจสอบ struct
+func ValidateStruct(s interface{}) error {
+	return Validate.Struct(s)
+}
+
+// ValidateVar ตรวจสอบตัวแปรเดียว
+func ValidateVar(field interface{}, tag string) error {
+	return Validate.Var(field, tag)
+}
+
+// customTagMessage คืนข้อความตาม tag (ภาษาไทย)
+func customTagMessage(tag string) string {
+	switch tag {
+	case "required":
+		return "กรุณาระบุข้อมูล"
+	case "email":
+		return "รูปแบบอีเมลไม่ถูกต้อง"
+	case "max":
+		return "ข้อมูลยาวเกินไป"
+	case "min":
+		return "ข้อมูลสั้นเกินไป"
+	case "len":
+		return "ความยาวข้อมูลไม่ถูกต้อง"
+	case "eq":
+		return "ข้อมูลต้องตรงกับค่าที่กำหนด"
+	case "ne":
+		return "ข้อมูลต้องไม่ตรงกับค่าที่กำหนด"
+	case "gt":
+		return "ค่าต้องมากกว่า"
+	case "gte":
+		return "ค่าต้องมากกว่าหรือเท่ากับ"
+	case "lt":
+		return "ค่าต้องน้อยกว่า"
+	case "lte":
+		return "ค่าต้องน้อยกว่าหรือเท่ากับ"
+	case "oneof":
+		return "ข้อมูลต้องเป็นหนึ่งในค่าที่กำหนด"
+	case "numeric":
+		return "ต้องเป็นตัวเลขเท่านั้น"
+	case "alphanum":
+		return "ต้องเป็นตัวอักษรหรือตัวเลขเท่านั้น"
+	case "url":
+		return "รูปแบบ URL ไม่ถูกต้อง"
+	case "uuid":
+		return "รูปแบบ UUID ไม่ถูกต้อง"
+	case "datetime":
+		return "รูปแบบวันเวลาไม่ถูกต้อง"
+	case "time":
+		return "รูปแบบเวลาไม่ถูกต้อง"
+	case "boolean":
+		return "ต้องเป็น true หรือ false"
+	case "base64":
+		return "ต้องเป็น base64 เท่านั้น"
+	case "ip":
+		return "รูปแบบ IP address ไม่ถูกต้อง"
+	case "hostname":
+		return "รูปแบบ hostname ไม่ถูกต้อง"
+	case "contains":
+		return "ข้อมูลต้องมีค่าที่กำหนด"
+	case "excludes":
+		return "ข้อมูลต้องไม่มีค่าที่กำหนด"
+	case "startswith":
+		return "ข้อมูลต้องขึ้นต้นด้วยค่าที่กำหนด"
+	case "endswith":
+		return "ข้อมูลต้องลงท้ายด้วยค่าที่กำหนด"
+	case "unique":
+		return "ข้อมูลต้องไม่ซ้ำกัน"
+	case "number":
+		return "ต้องเป็นตัวเลข"
+	case "integer":
+		return "ต้องเป็นจำนวนเต็ม"
+	case "string":
+		return "ต้องเป็นข้อความ"
+	case "array":
+		return "ต้องเป็น array"
+	case "file":
+		return "ต้องเป็นไฟล์"
+	case "dir":
+		return "ต้องเป็นโฟลเดอร์"
+	case "credit_card":
+		return "หมายเลขบัตรเครดิตไม่ถูกต้อง"
+	case "isbn":
+		return "หมายเลข ISBN ไม่ถูกต้อง"
+	case "iso3166":
+		return "รหัสประเทศไม่ถูกต้อง (ISO3166)"
+	case "iso4217":
+		return "รหัสสกุลเงินไม่ถูกต้อง (ISO4217)"
+	case "timezone":
+		return "รหัส timezone ไม่ถูกต้อง"
+	case "country_code":
+		return "รหัสประเทศไม่ถูกต้อง"
+	case "currency_code":
+		return "รหัสสกุลเงินไม่ถูกต้อง"
+	case "phone":
+		return "เบอร์โทรศัพท์ไม่ถูกต้อง"
+	case "mobile":
+		return "เบอร์มือถือไม่ถูกต้อง"
+	case "tel":
+		return "เบอร์โทรศัพท์ไม่ถูกต้อง"
+	case "thai_id":
+		return "เลขบัตรประชาชนไทยไม่ถูกต้อง"
+	case "no_special":
+		return "ห้ามมีอักษรพิเศษ"
+	case "no_sql_inject":
+		return "ห้ามมีอักษรพิเศษ"
+	default:
+		return tag
+	}
+}
+
+// MapValidationErrors แปลง validation error เป็น custom message
+func MapValidationErrors(err error, obj interface{}) error {
+	res := ""
+	if errs, ok := err.(validator.ValidationErrors); ok {
+		typ := reflect.TypeOf(obj)
+		if typ.Kind() == reflect.Ptr {
+			typ = typ.Elem()
+		}
+		for _, e := range errs {
+			field, tag := e.Field(), e.Tag()
+			fieldName := field // fallback
+			if f, ok := typ.FieldByName(field); ok {
+				// ถ้ามี tag th ให้ใช้ก่อน, ถ้าไม่มีก็ใช้ json, ถ้าไม่มีทั้งคู่ใช้ชื่อ field
+				if th, ok := f.Tag.Lookup("th"); ok && th != "" {
+					fieldName = th
+				} else if jsonTag, ok := f.Tag.Lookup("json"); ok && jsonTag != "" {
+					fieldName = jsonTag
+				}
+			}
+			msg := fmt.Sprintf("%s: %s", fieldName, customTagMessage(tag))
+			res += msg
+		}
+	}
+	return errors.New(res)
+}
+
+func ResponseValidationError(c *gin.Context, err error, obj interface{}) bool {
+	if ve, ok := err.(validator.ValidationErrors); ok {
+		errors := MapValidationErrors(ve, obj)
+		response.BadRequest(c, errors.Error())
+		return true
+	}
+	return false
+}
+
+// RegisterGinCustomValidators สำหรับ Gin binding validator
+// ตัวอย่างการเรียก: validator.RegisterGinCustomValidators() ใน main หรือก่อน init Gin
+func RegisterGinCustomValidators() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("datetime", validateDateFormat)
+		v.RegisterValidation("boolean", validateBoolean)
+		v.RegisterValidation("base64", validateBase64)
+		v.RegisterValidation("contains", validateContains)
+		v.RegisterValidation("excludes", validateExcludes)
+		v.RegisterValidation("startswith", validateStartsWith)
+		v.RegisterValidation("endswith", validateEndsWith)
+		v.RegisterValidation("unique", validateUnique)
+		v.RegisterValidation("string", validateString)
+		v.RegisterValidation("array", validateArray)
+		v.RegisterValidation("file", validateFile)
+		v.RegisterValidation("dir", validateDir)
+		v.RegisterValidation("iso3166", validateISO3166)
+		v.RegisterValidation("iso4217", validateISO4217)
+		v.RegisterValidation("timezone", validateTimezone)
+		v.RegisterValidation("country_code", validateCountryCode)
+		v.RegisterValidation("currency_code", validateCurrencyCode)
+		v.RegisterValidation("phone", validatePhone)
+		v.RegisterValidation("mobile", validateMobile)
+		v.RegisterValidation("tel", validateTel)
+		v.RegisterValidation("thai_id", validateThaiID)
+		v.RegisterValidation("no_special", validateNoSpecial)
+		v.RegisterValidation("no_sql_inject", validateNoSQLInjection)
+	}
+}

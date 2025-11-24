@@ -1,0 +1,113 @@
+name: CI/CD to EC2
+
+on:
+  push:
+    branches:
+      - 'release*'     # e.g. release-v0.0.1
+      - 'release/**'   # e.g. release/0.0.1
+      - 'main'
+      - 'master'
+    tags:
+      - 'v*'
+      - 'release*'
+  pull_request:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Set environment variables for reuse
+      - name: Set environment variables
+        run: |
+          echo "APP_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)" >> $GITHUB_ENV
+          echo "VERSION=$(echo ${{ github.ref_name }} | sed 's/release\///')" >> $GITHUB_ENV
+
+      # Set up Docker Buildx cache
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:${{ env.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:latest
+          build-args: |
+            PORT=${{ secrets.PORT }}
+            TIMEZONE=Asia/Bangkok
+            TARGETARCH=${{ secrets.TARGETARCH }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Set environment variables again since they are job-scoped
+      - name: Set environment variables
+        run: |
+          echo "APP_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)" >> $GITHUB_ENV
+          echo "VERSION=$(echo ${{ github.ref_name }} | sed 's/release\///')" >> $GITHUB_ENV
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            
+            # Stop and remove old container if exists
+            docker stop ${{ env.APP_NAME }} || true
+            docker rm ${{ env.APP_NAME }} || true
+            
+            # Pull latest image with platform specified
+            docker pull --platform linux/arm64 ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:${{ env.VERSION }}
+
+            # Create env file from CI secret 
+            ENV_FILE_PATH=/tmp/${{ env.APP_NAME }}.env
+            rm -f "$ENV_FILE_PATH"
+            cat <<'EOF' > "$ENV_FILE_PATH"
+            ${{ secrets.ENV_PROD }}
+            EOF
+            chmod 600 "$ENV_FILE_PATH"
+            
+            # Run new container with explicit network mode
+            docker run -d \
+              --name ${{ env.APP_NAME }} \
+              --restart always \
+              --network host \
+              -v /temp:/temp \
+              --env-file "$ENV_FILE_PATH" \
+              ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:${{ env.VERSION }}
+            
+            # Verify container is running
+            docker ps | grep ${{ env.APP_NAME }}
+
