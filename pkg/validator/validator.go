@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -196,8 +197,9 @@ func customTagMessage(tag string) string {
 }
 
 // MapValidationErrors แปลง validation error เป็น custom message
+// หากมีหลาย field จะคั่นแต่ละข้อความด้วย ", "
 func MapValidationErrors(err error, obj interface{}) error {
-	res := ""
+	var msgs []string
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		typ := reflect.TypeOf(obj)
 		if typ.Kind() == reflect.Ptr {
@@ -214,11 +216,10 @@ func MapValidationErrors(err error, obj interface{}) error {
 					fieldName = jsonTag
 				}
 			}
-			msg := fmt.Sprintf("%s: %s", fieldName, customTagMessage(tag))
-			res += msg
+			msgs = append(msgs, fmt.Sprintf("%s: %s", fieldName, customTagMessage(tag)))
 		}
 	}
-	return errors.New(res)
+	return errors.New(strings.Join(msgs, ", "))
 }
 
 func ResponseValidationError(c *gin.Context, err error, obj interface{}) bool {
