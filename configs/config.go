@@ -77,6 +77,12 @@ func LoadConfig(ctx context.Context) *Config {
 		JWT_AUDIENCE:          getEnv("JWT_AUDIENCE", "", false),          // ไม่บังคับให้มี audience
 		JWT_VALIDATE_AUDIENCE: getEnvBool("JWT_VALIDATE_AUDIENCE", false), // ปิดการตรวจสอบ audience เป็นค่าเริ่มต้น
 	}
+	level, err := logger.ParseLevel(env.LOGGER_LEVEL)
+	if err != nil {
+		logger.Warn("invalid LOG_LEVEL, using info: ", err)
+	}
+	logger.SetLevel(level)
+
 	logger.Info("env", env)
 	return &Config{
 		Env: env,

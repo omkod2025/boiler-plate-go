@@ -236,7 +236,7 @@ curl -X POST localhost:21400/api/auth/login -H 'Content-Type: application/json' 
 | `APP_PREFIX` | `/api` | | prefix ของทุก route |
 | `APP_LIMIT` | `100` | | rate limit ต่อ IP (request ต่อนาที) เกินจะได้ 429 |
 | `WHITE_LIST_URL` | `*` | | origin ที่อนุญาตสำหรับ CORS |
-| `LOG_LEVEL` | `info` | | ระดับ log (อ่านค่าแล้วแต่ยังไม่ได้ส่งให้ `logger.SetLevel`) |
+| `LOG_LEVEL` | `info` | | ระดับ log: `debug`, `info`, `warn`, `error` (ค่าอื่นใช้ `info`) |
 | `DB_HOST` | `localhost` | ✓ | host ของ PostgreSQL |
 | `DB_PORT` | `5432` | | port ของ PostgreSQL |
 | `DB_USER` | `user` | ✓ | user |

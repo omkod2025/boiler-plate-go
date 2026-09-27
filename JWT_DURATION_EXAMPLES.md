@@ -13,7 +13,9 @@
 | `s` | `60s` | seconds |
 | `m` | `30m` | minutes |
 | `h` | `2h` | hours |
-| `d` | `7d` | days |
+
+ค่าถูกอ่านด้วย `time.ParseDuration` ของ Go ซึ่ง **ไม่รองรับหน่วย `d` (วัน)** ให้ใช้ชั่วโมงแทน
+เช่น 7 วัน = `168h`, 30 วัน = `720h` ถ้ารูปแบบไม่ถูกต้องระบบจะใช้ค่าเริ่มต้น `24h` แทนโดยไม่แจ้ง error
 
 ## Environment-Specific Examples
 
@@ -21,8 +23,8 @@
 ```env
 # Long duration for development convenience
 JWT_DURATION=24h                    # 24 hours
-JWT_DURATION=7d                     # 7 days
-JWT_DURATION=30d                    # 30 days
+JWT_DURATION=168h                   # 7 days
+JWT_DURATION=720h                   # 30 days
 ```
 
 ### Staging Environment
@@ -65,8 +67,8 @@ JWT_DURATION=2h                     # Longer duration for public APIs
 ```env
 JWT_DURATION=1h30m                  # 1 hour 30 minutes
 JWT_DURATION=2h15m30s               # 2 hours 15 minutes 30 seconds
-JWT_DURATION=1d12h                  # 1 day 12 hours
-JWT_DURATION=7d6h                   # 7 days 6 hours
+JWT_DURATION=36h                    # 1 day 12 hours
+JWT_DURATION=174h                   # 7 days 6 hours
 ```
 
 ### Short Durations (High Security)
@@ -89,9 +91,9 @@ JWT_DURATION=6h                     # 6 hours
 ```env
 JWT_DURATION=12h                    # 12 hours
 JWT_DURATION=24h                    # 24 hours
-JWT_DURATION=7d                     # 7 days
-JWT_DURATION=30d                    # 30 days
-JWT_DURATION=90d                    # 90 days
+JWT_DURATION=168h                   # 7 days
+JWT_DURATION=720h                   # 30 days
+JWT_DURATION=2160h                  # 90 days
 ```
 
 ## Best Practices by Use Case
@@ -100,7 +102,7 @@ JWT_DURATION=90d                    # 90 days
 ```env
 # For development convenience
 JWT_DURATION=24h                    # 24 hours
-JWT_DURATION=7d                     # 7 days
+JWT_DURATION=168h                   # 7 days
 ```
 
 ### 2. Testing/Staging
@@ -145,7 +147,7 @@ JWT_DURATION=2h
 JWT_DURATION=15m
 
 # Refresh Token (Long-lived)
-JWT_DURATION=7d
+JWT_DURATION=168h
 ```
 
 ## Security Considerations
