@@ -16,12 +16,14 @@ pre-commit:
       run: |
         go vet ./...
     golangci:
+      # .golangci.yml เป็น config v2 ต้องใช้ golangci-lint v2 ขึ้นไป
+      # --new-from-rev=HEAD รายงานเฉพาะ issue ในโค้ดที่เพิ่มหรือแก้ใหม่ ไม่ให้ issue เดิมใน repo บล็อกทุก commit
       run: |
         if ! command -v golangci-lint >/dev/null 2>&1; then
           echo "golangci-lint not found. Installing..." >&2
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.5.0
         fi
-        golangci-lint run --timeout=5m
+        golangci-lint run --new-from-rev=HEAD ./...
 
 pre-push:
   commands:
