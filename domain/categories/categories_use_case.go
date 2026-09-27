@@ -4,72 +4,48 @@ import (
 	"context"
 )
 
-// CategoryRepositoryInterface defines the contract for category repository
-type CategoryRepositoryInterface interface {
-	List(ctx context.Context, userProfileID int) ([]CategoryDB, error)
-	Create(ctx context.Context, in CreateCategoryDBInput) (CategoryDB, error)
-	Update(ctx context.Context, id string, in UpdateCategoryDBInput) (CategoryDB, error)
-	Delete(ctx context.Context, id string) error
-	ListMasterCategories(ctx context.Context) ([]MasterCategoryDB, error)
-	CreateMasterCategory(ctx context.Context, in CreateMasterCategoryDBInput) (MasterCategoryDB, error)
+// CreateInput ข้อมูลสำหรับสร้างหมวดหมู่
+type CreateInput struct {
+	Name  string
+	Color string
+	Icon  string
+	Type  Type
 }
 
 type CategoryUseCase struct {
-	repo CategoryRepositoryInterface
+	repo Repository
 }
 
-func NewCategoryUseCase(repo CategoryRepositoryInterface) *CategoryUseCase {
+func NewCategoryUseCase(repo Repository) *CategoryUseCase {
 	return &CategoryUseCase{repo: repo}
 }
 
-func mapDBToResponse(db CategoryDB) CategoryResponse {
-	return CategoryResponse{
-		ID:        int(db.CategoryID.Int64),
-		Name:      db.CategoryName.String,
-		Color:     db.Color.String,
-		Icon:      db.Icon.String,
-		Type:      db.CategoryType.String,
-		CreatedAt: db.CreatedAt.String,
-		UpdatedAt: db.UpdatedAt.String,
-	}
+func (uc *CategoryUseCase) List(ctx context.Context, userProfileID int) ([]Category, error) {
+	return uc.repo.ListByUser(ctx, userProfileID)
 }
 
-func (uc *CategoryUseCase) List(ctx context.Context, userProfileID int) ([]CategoryResponse, error) {
-	dbs, err := uc.repo.List(ctx, userProfileID)
-	if err != nil {
-		return nil, err
+func (uc *CategoryUseCase) Create(ctx context.Context, userProfileID int, in CreateInput) (Category, error) {
+	if !in.Type.Valid() {
+		return Category{}, ErrInvalidType
 	}
-	out := make([]CategoryResponse, 0, len(dbs))
-	for _, d := range dbs {
-		out = append(out, mapDBToResponse(d))
-	}
-	return out, nil
-}
-
-func (uc *CategoryUseCase) Create(ctx context.Context, dto CreateCategoryRequest, userProfileID int) (CategoryResponse, error) {
-	in := CreateCategoryDBInput{
-		CategoryName:  dto.Name,
+	return uc.repo.Create(ctx, Category{
 		UserProfileID: userProfileID,
-		Color:         &dto.Color,
-		Icon:          &dto.Icon,
-		CategoryType:  dto.Type,
-	}
-	db, err := uc.repo.Create(ctx, in)
-	if err != nil {
-		return CategoryResponse{}, err
-	}
-	return mapDBToResponse(db), nil
+		Name:          in.Name,
+		Color:         in.Color,
+		Icon:          in.Icon,
+		Type:          in.Type,
+	})
 }
 
-func (uc *CategoryUseCase) Update(ctx context.Context, id string, dto UpdateCategoryRequest) (CategoryResponse, error) {
-	in := UpdateCategoryDBInput{CategoryName: dto.Name, Color: dto.Color, Icon: dto.Icon, CategoryType: dto.Type}
-	db, err := uc.repo.Update(ctx, id, in)
-	if err != nil {
-		return CategoryResponse{}, err
+// Update แก้ไขหมวดหมู่ได้เฉพาะของ userProfileID เท่านั้น
+func (uc *CategoryUseCase) Update(ctx context.Context, userProfileID, id int, in UpdateInput) (Category, error) {
+	if in.Type != nil && !in.Type.Valid() {
+		return Category{}, ErrInvalidType
 	}
-	return mapDBToResponse(db), nil
+	return uc.repo.Update(ctx, userProfileID, id, in)
 }
 
-func (uc *CategoryUseCase) Delete(ctx context.Context, id string) error {
-	return uc.repo.Delete(ctx, id)
+// Delete ลบหมวดหมู่ได้เฉพาะของ userProfileID เท่านั้น
+func (uc *CategoryUseCase) Delete(ctx context.Context, userProfileID, id int) error {
+	return uc.repo.Delete(ctx, userProfileID, id)
 }

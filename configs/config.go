@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/middleware"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
 	"os"
 	"strconv"
@@ -138,28 +137,4 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 		}
 	}
 	return fallback
-}
-
-// LoadJWTConfig โหลด JWT configuration พร้อม RSA keys
-func LoadJWTConfig(env EnvConfig) (*middleware.JWTConfig, error) {
-	// โหลด private key
-	privateKey, err := middleware.LoadRSAPrivateKey(env.JWT_PRIVATE_KEY)
-	if err != nil {
-		return nil, err
-	}
-
-	// โหลด public key
-	publicKey, err := middleware.LoadRSAPublicKey(env.JWT_PUBLIC_KEY)
-	if err != nil {
-		return nil, err
-	}
-
-	return &middleware.JWTConfig{
-		PrivateKey:       privateKey,
-		PublicKey:        publicKey,
-		TokenDuration:    env.JWT_DURATION,
-		Issuer:           env.JWT_ISSUER,
-		Audience:         env.JWT_AUDIENCE,
-		ValidateAudience: env.JWT_VALIDATE_AUDIENCE,
-	}, nil
 }
