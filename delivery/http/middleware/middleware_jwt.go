@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
+
 	pkgjwt "github.com/omkod2025-boop/omgon-notification-service/pkg/jwt"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
-	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
