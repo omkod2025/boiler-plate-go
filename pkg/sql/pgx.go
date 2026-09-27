@@ -2,10 +2,10 @@ package sql
 
 import (
 	"context"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
 	"fmt"
-
 	"time"
+
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

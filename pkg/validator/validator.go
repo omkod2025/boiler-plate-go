@@ -2,11 +2,12 @@ package validator
 
 import (
 	"errors"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
