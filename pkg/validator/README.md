@@ -6,42 +6,27 @@ Package สำหรับ validation HTTP request ใน Go application
 
 ### Custom Validators
 
-1. **Phone Number** (`phone`)
-   - รองรับเบอร์โทรศัพท์ไทย
-   - รูปแบบ: `0812345678`, `+66812345678`
+| tag | ตรวจสอบ | ตัวอย่างที่ผ่าน |
+|---|---|---|
+| `phone` | เบอร์โทรศัพท์ไทย (บ้านหรือมือถือ) ขึ้นต้นด้วย `0` หรือ `+66` | `0812345678`, `021234567`, `+66812345678` |
+| `mobile` | ตัวเลข 9-10 หลัก ขึ้นต้นด้วย `0` | `0812345678` |
+| `tel` | เบอร์โทรศัพท์บ้านไทย 9 หลัก ขึ้นต้นด้วย `02`-`07` | `021234567`, `+6621234567` |
+| `thai_id` | เลขบัตรประชาชน 13 หลัก พร้อมตรวจ check digit | `1101700230708` |
+| `string` | field ต้องเป็นชนิด string | |
+| `array` | field ต้องเป็น slice หรือ array | |
+| `no_special` | อนุญาตเฉพาะ a-z, A-Z, 0-9 และเว้นวรรค | |
+| `no_sql_inject` | ห้ามมีอักขระเสี่ยง SQL injection เช่น `'`, `;`, `--` | |
 
-2. **Thai ID** (`thai_id`)
-   - ตรวจสอบเลขบัตรประชาชน 13 หลัก
-   - ตรวจสอบ checksum algorithm
+Alias ไปยัง validator ของ library:
 
-3. **Username** (`username`)
-   - 3-20 ตัวอักษร
-   - ตัวอักษร, ตัวเลข, underscore เท่านั้น
+| tag | เทียบเท่า |
+|---|---|
+| `iso3166` | `iso3166_1_alpha2\|iso3166_1_alpha3\|iso3166_1_alpha_numeric` |
+| `currency_code` | `iso4217` |
 
-4. **Password** (`password`)
-   - อย่างน้อย 8 ตัวอักษร
-   - ต้องมีตัวพิมพ์ใหญ่, ตัวพิมพ์เล็ก, ตัวเลข, special character
-
-5. **Thai Language** (`thai`)
-   - ตรวจสอบว่ามีตัวอักษรไทยหรือไม่
-
-6. **English Language** (`english`)
-   - ตรวจสอบว่ามีตัวอักษรภาษาอังกฤษหรือไม่
-
-7. **URL** (`url`)
-   - ตรวจสอบ URL format
-
-8. **Date Format** (`date_format`)
-   - รองรับ: `YYYY-MM-DD`, `DD/MM/YYYY`, `DD-MM-YYYY`
-
-9. **Time Format** (`time_format`)
-   - รองรับ: `HH:MM:SS`, `HH:MM`
-
-10. **JSON** (`json`)
-    - ตรวจสอบ JSON string
-
-11. **Base64** (`base64`)
-    - ตรวจสอบ Base64 string
+tag อื่นใช้ของ [go-playground/validator](https://github.com/go-playground/validator) โดยตรง เช่น `datetime=2006-01-02`,
+`boolean`, `base64`, `contains=@`, `startswith=TH`, `unique`, `timezone`, `iso4217`, `country_code`
+(`datetime` ต้องระบุ layout เสมอ)
 
 ## Usage
 
@@ -362,11 +347,17 @@ type Example struct {
 
 ## 7. การเพิ่ม custom validation
 
+เพิ่มฟังก์ชันและ tag ใน `customValidators` (หรือ `customAliases`) ใน validator.go
+ระบบจะลงทะเบียนให้ทั้ง `Validate` และ Gin binding validator และเพิ่มข้อความใน `customTagMessage`
+
 ```go
-// ใน init() ของ validator.go
-validate.RegisterValidation("datetime", validateDateFormat)
-validate.RegisterValidation("time", validateTimeFormat)
+var customValidators = map[string]validator.Func{
+	// ...
+	"postcode": validatePostcode,
+}
 ```
+
+ห้ามใช้ชื่อ tag ที่ library มีอยู่แล้ว เพราะจะไปแทนที่การตรวจของ library
 
 ---
 

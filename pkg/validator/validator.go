@@ -17,24 +17,11 @@ import (
 var Validate = validator.New()
 
 // customValidators tag ที่ลงทะเบียนเพิ่มกับทั้ง Validate และ Gin binding validator
+// tag ที่ library มีให้อยู่แล้ว (datetime, boolean, base64, contains, excludes, startswith, endswith,
+// unique, file, dir, iso4217, timezone, country_code ฯลฯ) ห้ามลงทะเบียนทับ เพราะจะแทนที่การตรวจของ library
 var customValidators = map[string]validator.Func{
-	"datetime":      validateDateFormat,
-	"boolean":       validateBoolean,
-	"base64":        validateBase64,
-	"contains":      validateContains,
-	"excludes":      validateExcludes,
-	"startswith":    validateStartsWith,
-	"endswith":      validateEndsWith,
-	"unique":        validateUnique,
 	"string":        validateString,
 	"array":         validateArray,
-	"file":          validateFile,
-	"dir":           validateDir,
-	"iso3166":       validateISO3166,
-	"iso4217":       validateISO4217,
-	"timezone":      validateTimezone,
-	"country_code":  validateCountryCode,
-	"currency_code": validateCurrencyCode,
 	"phone":         validatePhone,
 	"mobile":        validateMobile,
 	"tel":           validateTel,
@@ -43,14 +30,18 @@ var customValidators = map[string]validator.Func{
 	"no_sql_inject": validateNoSQLInjection,
 }
 
+// customAliases tag ที่เป็นชื่อย่อของ validator ใน library
+var customAliases = map[string]string{
+	"iso3166":       "iso3166_1_alpha2|iso3166_1_alpha3|iso3166_1_alpha_numeric",
+	"currency_code": "iso4217",
+}
+
 func init() {
-	// Register built-in tags เป็น custom
-	// (ลบ RegisterValidation สำหรับ built-in tag เช่น required, email, max, min, len, oneof, numeric, alphanum, url, uuid, eq, ne, gt, gte, lt, lte, number, integer, credit_card, isbn, ip, hostname ออก)
 	registerCustomValidators(Validate)
 	RegisterGinCustomValidators()
 }
 
-// registerCustomValidators ลงทะเบียน customValidators ทั้งหมด
+// registerCustomValidators ลงทะเบียน customValidators และ customAliases ทั้งหมด
 // error เกิดได้เฉพาะเมื่อ tag หรือ function ไม่ถูกต้อง ซึ่งเป็นความผิดพลาดของโค้ด จึง panic ตั้งแต่ตอนเริ่มโปรแกรม
 func registerCustomValidators(v *validator.Validate) {
 	for tag, fn := range customValidators {
@@ -58,35 +49,61 @@ func registerCustomValidators(v *validator.Validate) {
 			panic(fmt.Sprintf("validator: register %q: %v", tag, err))
 		}
 	}
+	for alias, tags := range customAliases {
+		v.RegisterAlias(alias, tags)
+	}
 }
 
-// ตัวอย่างฟังก์ชัน custom validator (dummy)
-func validateDateFormat(fl validator.FieldLevel) bool   { return true }
-func validateBoolean(fl validator.FieldLevel) bool      { return true }
-func validateBase64(fl validator.FieldLevel) bool       { return true }
-func validateContains(fl validator.FieldLevel) bool     { return true }
-func validateExcludes(fl validator.FieldLevel) bool     { return true }
-func validateStartsWith(fl validator.FieldLevel) bool   { return true }
-func validateEndsWith(fl validator.FieldLevel) bool     { return true }
-func validateUnique(fl validator.FieldLevel) bool       { return true }
-func validateString(fl validator.FieldLevel) bool       { return true }
-func validateArray(fl validator.FieldLevel) bool        { return true }
-func validateFile(fl validator.FieldLevel) bool         { return true }
-func validateDir(fl validator.FieldLevel) bool          { return true }
-func validateISO3166(fl validator.FieldLevel) bool      { return true }
-func validateISO4217(fl validator.FieldLevel) bool      { return true }
-func validateTimezone(fl validator.FieldLevel) bool     { return true }
-func validateCountryCode(fl validator.FieldLevel) bool  { return true }
-func validateCurrencyCode(fl validator.FieldLevel) bool { return true }
-func validatePhone(fl validator.FieldLevel) bool        { return true }
+var (
+	// เบอร์โทรศัพท์ไทย (บ้านหรือมือถือ) ขึ้นต้นด้วย 0 หรือ +66 เช่น 021234567, 0812345678, +66812345678
+	phonePattern = regexp.MustCompile(`^(0|\+66)[1-9][0-9]{7,8}$`)
+	// เบอร์โทรศัพท์บ้านไทย 9 หลัก ขึ้นต้นด้วย 02-07 หรือ +662-+667 เช่น 021234567, +6621234567
+	telPattern = regexp.MustCompile(`^(0|\+66)[2-7][0-9]{7}$`)
+	// เลขบัตรประชาชน 13 หลัก
+	thaiIDPattern = regexp.MustCompile(`^[0-9]{13}$`)
+)
+
+// validateString field ต้องเป็นชนิด string
+func validateString(fl validator.FieldLevel) bool {
+	return fl.Field().Kind() == reflect.String
+}
+
+// validateArray field ต้องเป็น slice หรือ array
+func validateArray(fl validator.FieldLevel) bool {
+	kind := fl.Field().Kind()
+	return kind == reflect.Slice || kind == reflect.Array
+}
+
+// validatePhone เบอร์โทรศัพท์ไทย ทั้งเบอร์บ้านและมือถือ
+func validatePhone(fl validator.FieldLevel) bool {
+	return phonePattern.MatchString(fl.Field().String())
+}
+
 func validateMobile(fl validator.FieldLevel) bool {
 	value := fl.Field().String()
 	// ต้องเป็นตัวเลข 9-10 หลัก และขึ้นต้นด้วย 0
 	re := regexp.MustCompile(`^0[0-9]{8,9}$`)
 	return re.MatchString(value)
 }
-func validateTel(fl validator.FieldLevel) bool    { return true }
-func validateThaiID(fl validator.FieldLevel) bool { return true }
+
+// validateTel เบอร์โทรศัพท์บ้านไทย
+func validateTel(fl validator.FieldLevel) bool {
+	return telPattern.MatchString(fl.Field().String())
+}
+
+// validateThaiID เลขบัตรประชาชนไทย 13 หลัก พร้อมตรวจ check digit
+// check digit = (11 - (ผลรวมของหลักที่ 1-12 คูณน้ำหนัก 13 ถึง 2) mod 11) mod 10
+func validateThaiID(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	if !thaiIDPattern.MatchString(value) {
+		return false
+	}
+	sum := 0
+	for i := 0; i < 12; i++ {
+		sum += int(value[i]-'0') * (13 - i)
+	}
+	return (11-sum%11)%10 == int(value[12]-'0')
+}
 
 // validateNoSpecial: ห้ามมีอักษรพิเศษ (อนุญาต a-z, A-Z, 0-9, เว้นวรรค)
 func validateNoSpecial(fl validator.FieldLevel) bool {
