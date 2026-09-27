@@ -99,7 +99,7 @@ func (h *DatabaseHelper) Transaction(ctx context.Context, fn func(pgx.Tx) error)
 
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback(ctx)
+			_ = tx.Rollback(ctx) // กำลัง re-panic อยู่แล้ว rollback error จึงรายงานต่อไม่ได้
 			panic(p)
 		}
 	}()
@@ -127,7 +127,7 @@ func (h *DatabaseHelper) TransactionWithTimeout(ctx context.Context, timeout tim
 }
 
 // BatchInsert executes multiple INSERT queries in a batch
-func (h *DatabaseHelper) BatchInsert(ctx context.Context, queries []string, args [][]interface{}) error {
+func (h *DatabaseHelper) BatchInsert(ctx context.Context, queries []string, args [][]interface{}) (err error) {
 	if len(queries) != len(args) {
 		return fmt.Errorf("queries and args must have the same length")
 	}
@@ -138,7 +138,11 @@ func (h *DatabaseHelper) BatchInsert(ctx context.Context, queries []string, args
 	}
 
 	br := h.db.ExecBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		if closeErr := br.Close(); err == nil && closeErr != nil {
+			err = fmt.Errorf("batch close failed: %w", closeErr)
+		}
+	}()
 
 	for i := 0; i < batch.Len(); i++ {
 		_, err := br.Exec()
@@ -151,7 +155,7 @@ func (h *DatabaseHelper) BatchInsert(ctx context.Context, queries []string, args
 }
 
 // BatchUpdate executes multiple UPDATE queries in a batch
-func (h *DatabaseHelper) BatchUpdate(ctx context.Context, queries []string, args [][]interface{}) error {
+func (h *DatabaseHelper) BatchUpdate(ctx context.Context, queries []string, args [][]interface{}) (err error) {
 	if len(queries) != len(args) {
 		return fmt.Errorf("queries and args must have the same length")
 	}
@@ -162,7 +166,11 @@ func (h *DatabaseHelper) BatchUpdate(ctx context.Context, queries []string, args
 	}
 
 	br := h.db.ExecBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		if closeErr := br.Close(); err == nil && closeErr != nil {
+			err = fmt.Errorf("batch close failed: %w", closeErr)
+		}
+	}()
 
 	for i := 0; i < batch.Len(); i++ {
 		_, err := br.Exec()
@@ -175,7 +183,7 @@ func (h *DatabaseHelper) BatchUpdate(ctx context.Context, queries []string, args
 }
 
 // BatchDelete executes multiple DELETE queries in a batch
-func (h *DatabaseHelper) BatchDelete(ctx context.Context, queries []string, args [][]interface{}) error {
+func (h *DatabaseHelper) BatchDelete(ctx context.Context, queries []string, args [][]interface{}) (err error) {
 	if len(queries) != len(args) {
 		return fmt.Errorf("queries and args must have the same length")
 	}
@@ -186,7 +194,11 @@ func (h *DatabaseHelper) BatchDelete(ctx context.Context, queries []string, args
 	}
 
 	br := h.db.ExecBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		if closeErr := br.Close(); err == nil && closeErr != nil {
+			err = fmt.Errorf("batch close failed: %w", closeErr)
+		}
+	}()
 
 	for i := 0; i < batch.Len(); i++ {
 		_, err := br.Exec()

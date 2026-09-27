@@ -16,33 +16,48 @@ import (
 
 var Validate = validator.New()
 
+// customValidators tag ที่ลงทะเบียนเพิ่มกับทั้ง Validate และ Gin binding validator
+var customValidators = map[string]validator.Func{
+	"datetime":      validateDateFormat,
+	"boolean":       validateBoolean,
+	"base64":        validateBase64,
+	"contains":      validateContains,
+	"excludes":      validateExcludes,
+	"startswith":    validateStartsWith,
+	"endswith":      validateEndsWith,
+	"unique":        validateUnique,
+	"string":        validateString,
+	"array":         validateArray,
+	"file":          validateFile,
+	"dir":           validateDir,
+	"iso3166":       validateISO3166,
+	"iso4217":       validateISO4217,
+	"timezone":      validateTimezone,
+	"country_code":  validateCountryCode,
+	"currency_code": validateCurrencyCode,
+	"phone":         validatePhone,
+	"mobile":        validateMobile,
+	"tel":           validateTel,
+	"thai_id":       validateThaiID,
+	"no_special":    validateNoSpecial,
+	"no_sql_inject": validateNoSQLInjection,
+}
+
 func init() {
 	// Register built-in tags เป็น custom
 	// (ลบ RegisterValidation สำหรับ built-in tag เช่น required, email, max, min, len, oneof, numeric, alphanum, url, uuid, eq, ne, gt, gte, lt, lte, number, integer, credit_card, isbn, ip, hostname ออก)
-	Validate.RegisterValidation("datetime", validateDateFormat)
-	Validate.RegisterValidation("boolean", validateBoolean)
-	Validate.RegisterValidation("base64", validateBase64)
-	Validate.RegisterValidation("contains", validateContains)
-	Validate.RegisterValidation("excludes", validateExcludes)
-	Validate.RegisterValidation("startswith", validateStartsWith)
-	Validate.RegisterValidation("endswith", validateEndsWith)
-	Validate.RegisterValidation("unique", validateUnique)
-	Validate.RegisterValidation("string", validateString)
-	Validate.RegisterValidation("array", validateArray)
-	Validate.RegisterValidation("file", validateFile)
-	Validate.RegisterValidation("dir", validateDir)
-	Validate.RegisterValidation("iso3166", validateISO3166)
-	Validate.RegisterValidation("iso4217", validateISO4217)
-	Validate.RegisterValidation("timezone", validateTimezone)
-	Validate.RegisterValidation("country_code", validateCountryCode)
-	Validate.RegisterValidation("currency_code", validateCurrencyCode)
-	Validate.RegisterValidation("phone", validatePhone)
-	Validate.RegisterValidation("mobile", validateMobile)
-	Validate.RegisterValidation("tel", validateTel)
-	Validate.RegisterValidation("thai_id", validateThaiID)
-	Validate.RegisterValidation("no_special", validateNoSpecial)
-	Validate.RegisterValidation("no_sql_inject", validateNoSQLInjection)
+	registerCustomValidators(Validate)
 	RegisterGinCustomValidators()
+}
+
+// registerCustomValidators ลงทะเบียน customValidators ทั้งหมด
+// error เกิดได้เฉพาะเมื่อ tag หรือ function ไม่ถูกต้อง ซึ่งเป็นความผิดพลาดของโค้ด จึง panic ตั้งแต่ตอนเริ่มโปรแกรม
+func registerCustomValidators(v *validator.Validate) {
+	for tag, fn := range customValidators {
+		if err := v.RegisterValidation(tag, fn); err != nil {
+			panic(fmt.Sprintf("validator: register %q: %v", tag, err))
+		}
+	}
 }
 
 // ตัวอย่างฟังก์ชัน custom validator (dummy)
@@ -236,28 +251,6 @@ func ResponseValidationError(c *gin.Context, err error, obj interface{}) bool {
 // ตัวอย่างการเรียก: validator.RegisterGinCustomValidators() ใน main หรือก่อน init Gin
 func RegisterGinCustomValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("datetime", validateDateFormat)
-		v.RegisterValidation("boolean", validateBoolean)
-		v.RegisterValidation("base64", validateBase64)
-		v.RegisterValidation("contains", validateContains)
-		v.RegisterValidation("excludes", validateExcludes)
-		v.RegisterValidation("startswith", validateStartsWith)
-		v.RegisterValidation("endswith", validateEndsWith)
-		v.RegisterValidation("unique", validateUnique)
-		v.RegisterValidation("string", validateString)
-		v.RegisterValidation("array", validateArray)
-		v.RegisterValidation("file", validateFile)
-		v.RegisterValidation("dir", validateDir)
-		v.RegisterValidation("iso3166", validateISO3166)
-		v.RegisterValidation("iso4217", validateISO4217)
-		v.RegisterValidation("timezone", validateTimezone)
-		v.RegisterValidation("country_code", validateCountryCode)
-		v.RegisterValidation("currency_code", validateCurrencyCode)
-		v.RegisterValidation("phone", validatePhone)
-		v.RegisterValidation("mobile", validateMobile)
-		v.RegisterValidation("tel", validateTel)
-		v.RegisterValidation("thai_id", validateThaiID)
-		v.RegisterValidation("no_special", validateNoSpecial)
-		v.RegisterValidation("no_sql_inject", validateNoSQLInjection)
+		registerCustomValidators(v)
 	}
 }
