@@ -9,6 +9,8 @@ import (
 
 // Handlers รวม handler ทั้งหมดของ HTTP delivery
 type Handlers struct {
+	Auth       *handler.AuthHandler
+	Users      *handler.UsersHandler
 	Categories *handler.CategoriesHandler
 }
 
@@ -24,5 +26,7 @@ func RegisterHealthRoutes(r *gin.RouterGroup) {
 
 // RegisterRoutes register routes ของทุก feature ที่นี่
 func RegisterRoutes(r *gin.RouterGroup, h Handlers) {
+	RegisterAuthRoutes(r, h.Auth)
+	RegisterUsersRoutes(r, h.Users)
 	RegisterCategoriesRoutes(r, h.Categories)
 }

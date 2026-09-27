@@ -3,10 +3,11 @@ package sql
 import (
 	"context"
 	"encoding/json"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
 	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -147,4 +148,3 @@ func placeholders(n int) string {
 	}
 	return s
 }
-

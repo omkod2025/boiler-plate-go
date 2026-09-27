@@ -5,33 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 	"regexp"
 	"strings"
-	"time"
+
+	pkgjwt "github.com/omkod2025-boop/omgon-notification-service/pkg/jwt"
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWTConfig สำหรับกำหนดค่า JWT
-type JWTConfig struct {
-	PrivateKey       *rsa.PrivateKey
-	PublicKey        *rsa.PublicKey
-	TokenDuration    time.Duration
-	Issuer           string
-	Audience         string
-	ValidateAudience bool // เพิ่ม flag สำหรับควบคุมการตรวจสอบ audience
-}
+// JWTConfig สำหรับกำหนดค่า JWT (alias ของ pkg/jwt.Config)
+type JWTConfig = pkgjwt.Config
 
-// Claims สำหรับ JWT payload
-type Claims struct {
-	UserID   string `json:"sub"`
-	UserCode string `json:"subCode"`
-	Role     string `json:"role"`
-	jwt.RegisteredClaims
-}
+// Claims สำหรับ JWT payload (alias ของ pkg/jwt.Claims)
+type Claims = pkgjwt.Claims
 
 // JWT middleware สำหรับ validate token
 func JWT(config JWTConfig) gin.HandlerFunc {
@@ -139,26 +127,7 @@ func JWTRole(config JWTConfig, requiredRoles ...string) gin.HandlerFunc {
 
 // GenerateToken สำหรับสร้าง JWT token
 func GenerateToken(config JWTConfig, userID, userCode, role string) (string, error) {
-	claims := Claims{
-		UserID:   userID,
-		UserCode: userCode,
-		Role:     role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.TokenDuration)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    config.Issuer,
-			// ไม่ใส่ Audience ถ้าไม่ต้องการตรวจสอบ
-		},
-	}
-
-	// เพิ่ม Audience เฉพาะเมื่อต้องการ
-	if config.Audience != "" {
-		claims.Audience = []string{config.Audience}
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	return token.SignedString(config.PrivateKey)
+	return pkgjwt.GenerateToken(config, userID, userCode, role)
 }
 
 // ValidateToken สำหรับ validate token แยกออกมา
@@ -184,39 +153,7 @@ func extractToken(c *gin.Context) (string, error) {
 
 // validateToken validate JWT token และ return claims
 func validateToken(tokenString string, publicKey *rsa.PublicKey, validateAudience bool, expectedAudience string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// ตรวจสอบ signing method
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return publicKey, nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		// ตรวจสอบ audience เฉพาะเมื่อต้องการ
-		if validateAudience && expectedAudience != "" {
-			if !contains(claims.Audience, expectedAudience) {
-				return nil, errors.New("invalid audience")
-			}
-		}
-		return claims, nil
-	}
-
-	return nil, errors.New("invalid token")
-}
-
-// contains ตรวจสอบว่า slice มีค่าที่ต้องการหรือไม่
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
+	return pkgjwt.ParseToken(tokenString, publicKey, validateAudience, expectedAudience)
 }
 
 // GetUserFromContext helper function สำหรับดึง user info จาก context

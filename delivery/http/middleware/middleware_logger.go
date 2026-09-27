@@ -24,6 +24,6 @@ func Logger() gin.HandlerFunc {
 			c.Request.URL.Path,
 			c.Errors.ByType(gin.ErrorTypePrivate).String(),
 		)
-		os.Stdout.WriteString(logLine)
+		_, _ = os.Stdout.WriteString(logLine)
 	}
 }

@@ -2,10 +2,12 @@ package validator
 
 import (
 	"errors"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
+
+	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -14,62 +16,94 @@ import (
 
 var Validate = validator.New()
 
+// customValidators tag ที่ลงทะเบียนเพิ่มกับทั้ง Validate และ Gin binding validator
+// tag ที่ library มีให้อยู่แล้ว (datetime, boolean, base64, contains, excludes, startswith, endswith,
+// unique, file, dir, iso4217, timezone, country_code ฯลฯ) ห้ามลงทะเบียนทับ เพราะจะแทนที่การตรวจของ library
+var customValidators = map[string]validator.Func{
+	"string":        validateString,
+	"array":         validateArray,
+	"phone":         validatePhone,
+	"mobile":        validateMobile,
+	"tel":           validateTel,
+	"thai_id":       validateThaiID,
+	"no_special":    validateNoSpecial,
+	"no_sql_inject": validateNoSQLInjection,
+}
+
+// customAliases tag ที่เป็นชื่อย่อของ validator ใน library
+var customAliases = map[string]string{
+	"iso3166":       "iso3166_1_alpha2|iso3166_1_alpha3|iso3166_1_alpha_numeric",
+	"currency_code": "iso4217",
+}
+
 func init() {
-	// Register built-in tags เป็น custom
-	// (ลบ RegisterValidation สำหรับ built-in tag เช่น required, email, max, min, len, oneof, numeric, alphanum, url, uuid, eq, ne, gt, gte, lt, lte, number, integer, credit_card, isbn, ip, hostname ออก)
-	Validate.RegisterValidation("datetime", validateDateFormat)
-	Validate.RegisterValidation("boolean", validateBoolean)
-	Validate.RegisterValidation("base64", validateBase64)
-	Validate.RegisterValidation("contains", validateContains)
-	Validate.RegisterValidation("excludes", validateExcludes)
-	Validate.RegisterValidation("startswith", validateStartsWith)
-	Validate.RegisterValidation("endswith", validateEndsWith)
-	Validate.RegisterValidation("unique", validateUnique)
-	Validate.RegisterValidation("string", validateString)
-	Validate.RegisterValidation("array", validateArray)
-	Validate.RegisterValidation("file", validateFile)
-	Validate.RegisterValidation("dir", validateDir)
-	Validate.RegisterValidation("iso3166", validateISO3166)
-	Validate.RegisterValidation("iso4217", validateISO4217)
-	Validate.RegisterValidation("timezone", validateTimezone)
-	Validate.RegisterValidation("country_code", validateCountryCode)
-	Validate.RegisterValidation("currency_code", validateCurrencyCode)
-	Validate.RegisterValidation("phone", validatePhone)
-	Validate.RegisterValidation("mobile", validateMobile)
-	Validate.RegisterValidation("tel", validateTel)
-	Validate.RegisterValidation("thai_id", validateThaiID)
-	Validate.RegisterValidation("no_special", validateNoSpecial)
-	Validate.RegisterValidation("no_sql_inject", validateNoSQLInjection)
+	registerCustomValidators(Validate)
 	RegisterGinCustomValidators()
 }
 
-// ตัวอย่างฟังก์ชัน custom validator (dummy)
-func validateDateFormat(fl validator.FieldLevel) bool   { return true }
-func validateBoolean(fl validator.FieldLevel) bool      { return true }
-func validateBase64(fl validator.FieldLevel) bool       { return true }
-func validateContains(fl validator.FieldLevel) bool     { return true }
-func validateExcludes(fl validator.FieldLevel) bool     { return true }
-func validateStartsWith(fl validator.FieldLevel) bool   { return true }
-func validateEndsWith(fl validator.FieldLevel) bool     { return true }
-func validateUnique(fl validator.FieldLevel) bool       { return true }
-func validateString(fl validator.FieldLevel) bool       { return true }
-func validateArray(fl validator.FieldLevel) bool        { return true }
-func validateFile(fl validator.FieldLevel) bool         { return true }
-func validateDir(fl validator.FieldLevel) bool          { return true }
-func validateISO3166(fl validator.FieldLevel) bool      { return true }
-func validateISO4217(fl validator.FieldLevel) bool      { return true }
-func validateTimezone(fl validator.FieldLevel) bool     { return true }
-func validateCountryCode(fl validator.FieldLevel) bool  { return true }
-func validateCurrencyCode(fl validator.FieldLevel) bool { return true }
-func validatePhone(fl validator.FieldLevel) bool        { return true }
+// registerCustomValidators ลงทะเบียน customValidators และ customAliases ทั้งหมด
+// error เกิดได้เฉพาะเมื่อ tag หรือ function ไม่ถูกต้อง ซึ่งเป็นความผิดพลาดของโค้ด จึง panic ตั้งแต่ตอนเริ่มโปรแกรม
+func registerCustomValidators(v *validator.Validate) {
+	for tag, fn := range customValidators {
+		if err := v.RegisterValidation(tag, fn); err != nil {
+			panic(fmt.Sprintf("validator: register %q: %v", tag, err))
+		}
+	}
+	for alias, tags := range customAliases {
+		v.RegisterAlias(alias, tags)
+	}
+}
+
+var (
+	// เบอร์โทรศัพท์ไทย (บ้านหรือมือถือ) ขึ้นต้นด้วย 0 หรือ +66 เช่น 021234567, 0812345678, +66812345678
+	phonePattern = regexp.MustCompile(`^(0|\+66)[1-9][0-9]{7,8}$`)
+	// เบอร์โทรศัพท์บ้านไทย 9 หลัก ขึ้นต้นด้วย 02-07 หรือ +662-+667 เช่น 021234567, +6621234567
+	telPattern = regexp.MustCompile(`^(0|\+66)[2-7][0-9]{7}$`)
+	// เลขบัตรประชาชน 13 หลัก
+	thaiIDPattern = regexp.MustCompile(`^[0-9]{13}$`)
+)
+
+// validateString field ต้องเป็นชนิด string
+func validateString(fl validator.FieldLevel) bool {
+	return fl.Field().Kind() == reflect.String
+}
+
+// validateArray field ต้องเป็น slice หรือ array
+func validateArray(fl validator.FieldLevel) bool {
+	kind := fl.Field().Kind()
+	return kind == reflect.Slice || kind == reflect.Array
+}
+
+// validatePhone เบอร์โทรศัพท์ไทย ทั้งเบอร์บ้านและมือถือ
+func validatePhone(fl validator.FieldLevel) bool {
+	return phonePattern.MatchString(fl.Field().String())
+}
+
 func validateMobile(fl validator.FieldLevel) bool {
 	value := fl.Field().String()
 	// ต้องเป็นตัวเลข 9-10 หลัก และขึ้นต้นด้วย 0
 	re := regexp.MustCompile(`^0[0-9]{8,9}$`)
 	return re.MatchString(value)
 }
-func validateTel(fl validator.FieldLevel) bool    { return true }
-func validateThaiID(fl validator.FieldLevel) bool { return true }
+
+// validateTel เบอร์โทรศัพท์บ้านไทย
+func validateTel(fl validator.FieldLevel) bool {
+	return telPattern.MatchString(fl.Field().String())
+}
+
+// validateThaiID เลขบัตรประชาชนไทย 13 หลัก พร้อมตรวจ check digit
+// check digit = (11 - (ผลรวมของหลักที่ 1-12 คูณน้ำหนัก 13 ถึง 2) mod 11) mod 10
+func validateThaiID(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	if !thaiIDPattern.MatchString(value) {
+		return false
+	}
+	sum := 0
+	for i := 0; i < 12; i++ {
+		sum += int(value[i]-'0') * (13 - i)
+	}
+	return (11-sum%11)%10 == int(value[12]-'0')
+}
 
 // validateNoSpecial: ห้ามมีอักษรพิเศษ (อนุญาต a-z, A-Z, 0-9, เว้นวรรค)
 func validateNoSpecial(fl validator.FieldLevel) bool {
@@ -196,8 +230,9 @@ func customTagMessage(tag string) string {
 }
 
 // MapValidationErrors แปลง validation error เป็น custom message
+// หากมีหลาย field จะคั่นแต่ละข้อความด้วย ", "
 func MapValidationErrors(err error, obj interface{}) error {
-	res := ""
+	var msgs []string
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		typ := reflect.TypeOf(obj)
 		if typ.Kind() == reflect.Ptr {
@@ -214,11 +249,10 @@ func MapValidationErrors(err error, obj interface{}) error {
 					fieldName = jsonTag
 				}
 			}
-			msg := fmt.Sprintf("%s: %s", fieldName, customTagMessage(tag))
-			res += msg
+			msgs = append(msgs, fmt.Sprintf("%s: %s", fieldName, customTagMessage(tag)))
 		}
 	}
-	return errors.New(res)
+	return errors.New(strings.Join(msgs, ", "))
 }
 
 func ResponseValidationError(c *gin.Context, err error, obj interface{}) bool {
@@ -234,28 +268,6 @@ func ResponseValidationError(c *gin.Context, err error, obj interface{}) bool {
 // ตัวอย่างการเรียก: validator.RegisterGinCustomValidators() ใน main หรือก่อน init Gin
 func RegisterGinCustomValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("datetime", validateDateFormat)
-		v.RegisterValidation("boolean", validateBoolean)
-		v.RegisterValidation("base64", validateBase64)
-		v.RegisterValidation("contains", validateContains)
-		v.RegisterValidation("excludes", validateExcludes)
-		v.RegisterValidation("startswith", validateStartsWith)
-		v.RegisterValidation("endswith", validateEndsWith)
-		v.RegisterValidation("unique", validateUnique)
-		v.RegisterValidation("string", validateString)
-		v.RegisterValidation("array", validateArray)
-		v.RegisterValidation("file", validateFile)
-		v.RegisterValidation("dir", validateDir)
-		v.RegisterValidation("iso3166", validateISO3166)
-		v.RegisterValidation("iso4217", validateISO4217)
-		v.RegisterValidation("timezone", validateTimezone)
-		v.RegisterValidation("country_code", validateCountryCode)
-		v.RegisterValidation("currency_code", validateCurrencyCode)
-		v.RegisterValidation("phone", validatePhone)
-		v.RegisterValidation("mobile", validateMobile)
-		v.RegisterValidation("tel", validateTel)
-		v.RegisterValidation("thai_id", validateThaiID)
-		v.RegisterValidation("no_special", validateNoSpecial)
-		v.RegisterValidation("no_sql_inject", validateNoSQLInjection)
+		registerCustomValidators(v)
 	}
 }

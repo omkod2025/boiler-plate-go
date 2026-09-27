@@ -27,28 +27,28 @@ func SetLevel(level Level) {
 func Debug(v ...any) {
 	if logLevel <= DebugLevel {
 		stdLogger.SetPrefix("[DEBUG] ")
-		stdLogger.Output(2, sprint(v...))
+		_ = stdLogger.Output(2, sprint(v...))
 	}
 }
 
 func Info(v ...any) {
 	if logLevel <= InfoLevel {
 		stdLogger.SetPrefix("[INFO] ")
-		stdLogger.Output(2, sprint(v...))
+		_ = stdLogger.Output(2, sprint(v...))
 	}
 }
 
 func Warn(v ...any) {
 	if logLevel <= WarnLevel {
 		stdLogger.SetPrefix("[WARN] ")
-		stdLogger.Output(2, sprint(v...))
+		_ = stdLogger.Output(2, sprint(v...))
 	}
 }
 
 func Error(v ...any) {
 	if logLevel <= ErrorLevel {
 		stdLogger.SetPrefix("[ERROR] ")
-		stdLogger.Output(2, sprint(v...))
+		_ = stdLogger.Output(2, sprint(v...))
 	}
 }
 

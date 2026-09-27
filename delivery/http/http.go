@@ -29,10 +29,10 @@ func NewRouter(ctx context.Context, cfg *configs.Config, jwtConfig middleware.JW
 	// health check
 	routes.RegisterHealthRoutes(routerGroup)
 
-	// JWT middleware
+	// JWT middleware — route ที่ไม่ต้องใช้ token (public) ให้เพิ่มไว้ที่นี่
 	ignorePaths := []middleware.IgnoreRule{
-		{Pattern: cfg.Env.APP_PREFIX + "/user-profiles", Method: "POST"},
-		{Pattern: cfg.Env.APP_PREFIX + "/user-profiles/.*", Method: "ANY"},
+		{Pattern: cfg.Env.APP_PREFIX + "/auth/login", Method: "POST"},
+		{Pattern: cfg.Env.APP_PREFIX + "/users", Method: "POST"},
 	}
 	routerGroup.Use(middleware.JWTOptionalWithIgnoreRules(jwtConfig, ignorePaths))
 
