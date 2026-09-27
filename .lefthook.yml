@@ -3,7 +3,7 @@ pre-commit:
   commands:
     gofmt:
       run: |
-        files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\\.go$' || true)
+        files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.go$' || true)
         [ -z "$files" ] && exit 0
         fmt_out=$(gofmt -l $files)
         if [ -n "$fmt_out" ]; then
@@ -23,3 +23,10 @@ pre-commit:
         fi
         golangci-lint run --timeout=5m
 
+pre-push:
+  commands:
+    govulncheck:
+      # ตรวจ vulnerability ของ dependency และ Go standard library ที่โค้ดเรียกใช้จริง
+      # ใช้ฐานข้อมูลจาก https://vuln.go.dev จึงต้องต่อ internet ได้
+      run: |
+        go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
