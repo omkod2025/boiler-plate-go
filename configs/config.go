@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/middleware"
+	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/middleware"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
 	"os"
 	"strconv"

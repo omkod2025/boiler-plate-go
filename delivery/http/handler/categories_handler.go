@@ -1,20 +1,22 @@
-package categories
+package handler
 
 import (
 	"net/http"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/middleware"
+	"strconv"
+
+	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/middleware"
+	"github.com/omkod2025-boop/omgon-notification-service/domain/categories"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/validator"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CategoriesHandler struct {
-	useCase *CategoryUseCase
+	useCase *categories.CategoryUseCase
 }
 
-func NewCategoriesHandler(useCase *CategoryUseCase) *CategoriesHandler {
+func NewCategoriesHandler(useCase *categories.CategoryUseCase) *CategoriesHandler {
 	return &CategoriesHandler{useCase: useCase}
 }
 
@@ -52,7 +54,7 @@ func (h *CategoriesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var dto CreateCategoryRequest
+	var dto categories.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		if validator.ResponseValidationError(c, err, &dto) {
 			return
@@ -74,7 +76,7 @@ func (h *CategoriesHandler) Update(c *gin.Context) {
 		response.BadRequest(c, "id: ต้องเป็นตัวเลข")
 		return
 	}
-	var dto UpdateCategoryRequest
+	var dto categories.UpdateCategoryRequest
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		if validator.ResponseValidationError(c, err, &dto) {
 			return
