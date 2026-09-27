@@ -257,6 +257,7 @@ curl -X POST localhost:21400/api/auth/login -H 'Content-Type: application/json' 
 - ตัวแปรที่ "บังคับ" ถ้าไม่ตั้งค่า โปรแกรมจะหยุดทำงานตอนเริ่ม
 - ค่าแบบ duration ใช้รูปแบบของ Go (`time.ParseDuration`) เช่น `30m`, `24h`, `168h`
   — **ไม่รองรับหน่วย `d`** ถ้าค่าผิดรูปแบบจะใช้ค่าเริ่มต้นแทน
+- ตอนเริ่มโปรแกรมจะ log config ที่ระดับ `info` โดยปิดค่า `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY` เป็น `[REDACTED]`
 - รายละเอียดเรื่อง JWT ดูที่ [JWT_USAGE.md](JWT_USAGE.md)
 
 ## Development

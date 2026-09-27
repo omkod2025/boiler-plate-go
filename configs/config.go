@@ -3,6 +3,7 @@ package configs
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
 	"github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
 	"os"
@@ -35,6 +36,28 @@ type EnvConfig struct {
 	JWT_ISSUER            string
 	JWT_AUDIENCE          string
 	JWT_VALIDATE_AUDIENCE bool
+}
+
+// String ใช้เมื่อ log หรือ print config — ปิดค่า secret ไว้เสมอ เพื่อไม่ให้ key หลุดไปใน log
+func (e EnvConfig) String() string {
+	// แปลงเป็น type ที่ไม่มี method String เพื่อไม่ให้ fmt เรียก String ซ้ำจนวนไม่รู้จบ
+	type plain EnvConfig
+	redacted := plain(e)
+	redacted.JWT_PRIVATE_KEY = redact(e.JWT_PRIVATE_KEY)
+	redacted.JWT_PUBLIC_KEY = redact(e.JWT_PUBLIC_KEY)
+	return fmt.Sprintf("%+v", redacted)
+}
+
+// GoString ใช้กับ %#v — ปิดค่า secret เหมือน String
+func (e EnvConfig) GoString() string {
+	return e.String()
+}
+
+func redact(value string) string {
+	if value == "" {
+		return ""
+	}
+	return "[REDACTED]"
 }
 
 func LoadConfig(ctx context.Context) *Config {
