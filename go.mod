@@ -11,6 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	go.elastic.co/apm/module/apmgin/v2 v2.7.1
 	go.elastic.co/apm/v2 v2.7.1
+	golang.org/x/crypto v0.39.0
 	golang.org/x/time v0.12.0
 )
 
@@ -46,7 +47,6 @@ require (
 	go.elastic.co/apm/module/apmhttp/v2 v2.7.1 // indirect
 	go.elastic.co/fastjson v1.5.1 // indirect
 	golang.org/x/arch v0.18.0 // indirect
-	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
