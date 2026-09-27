@@ -158,9 +158,11 @@ if err != nil {
 
 ## RSA Key Management
 
+ฟังก์ชันจัดการ key อยู่ใน `pkg/jwt` (import `github.com/omkod2025-boop/omgon-notification-service/pkg/jwt`)
+
 ### LoadRSAPrivateKey
 ```go
-privateKey, err := middleware.LoadRSAPrivateKey(privateKeyPEM)
+privateKey, err := jwt.LoadRSAPrivateKey(privateKeyPEM)
 if err != nil {
     // handle error
 }
@@ -168,7 +170,7 @@ if err != nil {
 
 ### LoadRSAPublicKey
 ```go
-publicKey, err := middleware.LoadRSAPublicKey(publicKeyPEM)
+publicKey, err := jwt.LoadRSAPublicKey(publicKeyPEM)
 if err != nil {
     // handle error
 }
@@ -176,7 +178,7 @@ if err != nil {
 
 ### GenerateRSAKeyPair (สำหรับทดสอบ)
 ```go
-privateKeyPEM, publicKeyPEM, err := middleware.GenerateRSAKeyPair()
+privateKeyPEM, publicKeyPEM, err := jwt.GenerateRSAKeyPair()
 if err != nil {
     // handle error
 }

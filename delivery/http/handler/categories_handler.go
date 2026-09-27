@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -20,41 +21,68 @@ func NewCategoriesHandler(useCase *categories.CategoryUseCase) *CategoriesHandle
 	return &CategoriesHandler{useCase: useCase}
 }
 
-func (h *CategoriesHandler) List(c *gin.Context) {
+// currentUserProfileID อ่าน user id จาก JWT และเขียน error response ให้เองเมื่อไม่พบ
+func currentUserProfileID(c *gin.Context) (int, bool) {
 	userID, _, _, exists := middleware.GetUserFromContext(c)
 	if !exists {
 		response.Unauthorized(c, "User not found in context")
-		return
+		return 0, false
 	}
-
 	userProfileID, err := strconv.Atoi(userID)
 	if err != nil {
 		response.BadRequest(c, "Invalid user ID")
+		return 0, false
+	}
+	return userProfileID, true
+}
+
+// pathID อ่าน :id จาก path และเขียน error response ให้เองเมื่อไม่ใช่ตัวเลข
+func pathID(c *gin.Context) (int, bool) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		response.BadRequest(c, "id: ต้องเป็นตัวเลข")
+		return 0, false
+	}
+	return id, true
+}
+
+// respondUseCaseError แปลง domain error เป็น HTTP status
+func respondUseCaseError(c *gin.Context, err error, fallback string) {
+	switch {
+	case errors.Is(err, categories.ErrNotFound):
+		response.NotFound(c, "category not found")
+	case errors.Is(err, categories.ErrInvalidType):
+		response.BadRequest(c, err.Error())
+	default:
+		response.Error(c, fallback, http.StatusInternalServerError)
+	}
+}
+
+func (h *CategoriesHandler) List(c *gin.Context) {
+	userProfileID, ok := currentUserProfileID(c)
+	if !ok {
 		return
 	}
 
 	items, err := h.useCase.List(c.Request.Context(), userProfileID)
 	if err != nil {
-		response.Error(c, "failed to list categories", http.StatusInternalServerError)
+		respondUseCaseError(c, err, "failed to list categories")
 		return
 	}
-	response.Success(c, "ok", items)
+	out := make([]CategoryResponse, 0, len(items))
+	for _, item := range items {
+		out = append(out, toCategoryResponse(item))
+	}
+	response.Success(c, "ok", out)
 }
 
 func (h *CategoriesHandler) Create(c *gin.Context) {
-	userID, _, _, exists := middleware.GetUserFromContext(c)
-	if !exists {
-		response.Unauthorized(c, "User not found in context")
+	userProfileID, ok := currentUserProfileID(c)
+	if !ok {
 		return
 	}
 
-	userProfileID, err := strconv.Atoi(userID)
-	if err != nil {
-		response.BadRequest(c, "Invalid user ID")
-		return
-	}
-
-	var dto categories.CreateCategoryRequest
+	var dto CreateCategoryRequest
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		if validator.ResponseValidationError(c, err, &dto) {
 			return
@@ -62,21 +90,24 @@ func (h *CategoriesHandler) Create(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	item, err := h.useCase.Create(c.Request.Context(), dto, userProfileID)
+	item, err := h.useCase.Create(c.Request.Context(), userProfileID, dto.toInput())
 	if err != nil {
-		response.Error(c, "failed to create category", http.StatusInternalServerError)
+		respondUseCaseError(c, err, "failed to create category")
 		return
 	}
-	response.Success(c, "created", item)
+	response.Success(c, "created", toCategoryResponse(item))
 }
 
 func (h *CategoriesHandler) Update(c *gin.Context) {
-	id := c.Param("id")
-	if err := validator.ValidateVar(id, "required,number"); err != nil {
-		response.BadRequest(c, "id: ต้องเป็นตัวเลข")
+	userProfileID, ok := currentUserProfileID(c)
+	if !ok {
 		return
 	}
-	var dto categories.UpdateCategoryRequest
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	var dto UpdateCategoryRequest
 	if err := c.ShouldBindJSON(&dto); err != nil {
 		if validator.ResponseValidationError(c, err, &dto) {
 			return
@@ -84,22 +115,25 @@ func (h *CategoriesHandler) Update(c *gin.Context) {
 		response.BadRequest(c, err.Error())
 		return
 	}
-	item, err := h.useCase.Update(c.Request.Context(), id, dto)
+	item, err := h.useCase.Update(c.Request.Context(), userProfileID, id, dto.toInput())
 	if err != nil {
-		response.Error(c, "failed to update category", http.StatusInternalServerError)
+		respondUseCaseError(c, err, "failed to update category")
 		return
 	}
-	response.Success(c, "updated", item)
+	response.Success(c, "updated", toCategoryResponse(item))
 }
 
 func (h *CategoriesHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
-	if err := validator.ValidateVar(id, "required,number"); err != nil {
-		response.BadRequest(c, "id: ต้องเป็นตัวเลข")
+	userProfileID, ok := currentUserProfileID(c)
+	if !ok {
 		return
 	}
-	if err := h.useCase.Delete(c.Request.Context(), id); err != nil {
-		response.Error(c, "failed to delete category", http.StatusInternalServerError)
+	id, ok := pathID(c)
+	if !ok {
+		return
+	}
+	if err := h.useCase.Delete(c.Request.Context(), userProfileID, id); err != nil {
+		respondUseCaseError(c, err, "failed to delete category")
 		return
 	}
 	response.Success(c, "deleted", nil)
