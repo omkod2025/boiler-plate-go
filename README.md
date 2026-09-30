@@ -1,5 +1,9 @@
 # boiler-plate-go
 
+OMKOD Nexus ใช้ [nexus-template](nexus-template/README.md) ผ่าน script `new-service`
+ของ nexus-backend แยกจาก demo service ด้านล่าง (role entrypoint, Goose, OpenTelemetry,
+RabbitMQ, generated contracts และ testcontainers helpers ตาม FND-01.5)
+
 Boilerplate สำหรับเริ่มต้น REST API service ด้วย Go ที่จัดโครงสร้างตาม **Clean Architecture**
 มี feature ตัวอย่างพร้อมใช้ 3 ตัว (auth, users, categories) เพื่อใช้เป็นแบบในการเพิ่ม feature ใหม่
 
