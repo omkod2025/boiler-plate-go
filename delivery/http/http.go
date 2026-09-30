@@ -8,7 +8,6 @@ import (
 	"github.com/omkod2025/boiler-plate-go/delivery/http/routes"
 
 	"github.com/gin-gonic/gin"
-	apmgin "go.elastic.co/apm/module/apmgin/v2"
 )
 
 // NewRouter สร้าง gin.Engine พร้อม middleware และ routes ทั้งหมดของ HTTP delivery
@@ -17,8 +16,7 @@ func NewRouter(ctx context.Context, cfg *configs.Config, jwtConfig middleware.JW
 
 	// middleware
 	r.Use(middleware.Logger())
-	r.Use(apmgin.Middleware(r))
-	r.Use(middleware.APMTracerMiddleware(&ctx))
+	r.Use(middleware.Tracing(cfg.Env.APP_NAME))
 	r.Use(middleware.Recovery())
 	r.Use(middleware.CORS(cfg.Env.WHITE_LIST_URL, cfg.Env.ALLOW_HEADERS, cfg.Env.ALLOW_METHODS))
 	r.Use(middleware.RateLimitPerMinute(cfg.Env.APP_LIMIT, cfg.Env.APP_LIMIT))

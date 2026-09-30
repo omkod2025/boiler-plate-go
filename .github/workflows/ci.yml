@@ -49,6 +49,27 @@ jobs:
         with:
           version: v2.14.0
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # integration test เปิด PostgreSQL 18 และ RabbitMQ ด้วย testcontainers (runner มี Docker)
+      # REQUIRE_DOCKER=1 ให้ fail แทนการ skip เมื่อไม่มี Docker
+      - name: Test
+        env:
+          REQUIRE_DOCKER: "1"
+        run: go test -race ./...
+
+      - name: Generated code matches api/openapi.yaml
+        run: make generate-check
+
   govulncheck:
     runs-on: ubuntu-latest
     steps:

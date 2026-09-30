@@ -2,77 +2,56 @@ package main
 
 import (
 	"context"
-	"github.com/omkod2025/boiler-plate-go/app"
-	"github.com/omkod2025/boiler-plate-go/configs"
-	"github.com/omkod2025/boiler-plate-go/pkg/logger"
-	"net/http"
+	"flag"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/omkod2025/boiler-plate-go/app"
+	"github.com/omkod2025/boiler-plate-go/configs"
+	"github.com/omkod2025/boiler-plate-go/pkg/logger"
+	"github.com/omkod2025/boiler-plate-go/pkg/telemetry"
 )
 
-var timeout = 5 * time.Second
-
 func main() {
-	// สร้าง context ที่สามารถ cancel ได้
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	os.Exit(run())
+}
 
-	// โหลด config
-	cfg := configs.LoadConfig(ctx)
-	defer cfg.DB.Close()
-
-	// Initialize app และรับ router
-	router := app.InitApp(ctx, cfg)
-	if router == nil {
-		logger.Error("Failed to initialize application")
-		return
+// run คืน exit code — แยกจาก main เพื่อให้ defer (flush trace) ทำงานก่อน os.Exit
+func run() int {
+	// role เลือกจาก flag -role หรือ APP_ROLE (ค่าเริ่มต้น api) — image เดียวรันได้ทุก role
+	defaultRole := os.Getenv("APP_ROLE")
+	if defaultRole == "" {
+		defaultRole = app.RoleAPI
 	}
+	role := flag.String("role", defaultRole, "api | stream | worker | receiver | sandbox | migrate")
+	flag.Parse()
 
-	// Create a channel to listen for shutdown signals
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+	// SIGINT/SIGTERM cancel ctx → ทุก role หยุดรับงานใหม่แล้วรองานที่ค้างให้จบ
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// Create error channels for both servers
-	httpErrors := make(chan error, 1)
-	rpcErrors := make(chan error, 1)
+	cfg := configs.LoadConfig(*role)
 
-	// Create HTTP server instance
-	httpServer := &http.Server{
-		Addr:        ":" + cfg.Env.APP_PORT,
-		Handler:     router,
-		ReadTimeout: timeout,
+	shutdownTracing, err := telemetry.Init(ctx, telemetry.Options{
+		ServiceName: cfg.Env.APP_NAME, Version: cfg.Env.APP_VERSION, Environment: cfg.Env.APP_ENV,
+		Role: cfg.Env.APP_ROLE, Endpoint: cfg.Env.OTEL_ENDPOINT,
+	})
+	if err != nil {
+		logger.Error("telemetry: ", err)
+		return 1
 	}
-
-	// Start HTTP server
-	go func() {
-		logger.Info("HTTP server is running on port " + cfg.Env.APP_PORT)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			httpErrors <- err
-		}
+	defer func() {
+		flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = shutdownTracing(flushCtx)
 	}()
 
-	// Wait for shutdown signal or error
-	select {
-	case <-shutdown:
-		logger.Info("Shutdown signal received")
-	case err := <-httpErrors:
-		logger.Error("HTTP server error", "error", err)
-		return
-	case err := <-rpcErrors:
-		logger.Error("RPC server error", "error", err)
-		return
+	if err := app.Run(ctx, cfg); err != nil {
+		logger.Error("role "+cfg.Env.APP_ROLE+" failed: ", err)
+		return 1
 	}
-
-	// Create a context with timeout for graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	// Gracefully shutdown HTTP server
-	if err := httpServer.Shutdown(shutdownCtx); err != nil {
-		logger.Error("HTTP server shutdown error", "error", err)
-	}
-
-	logger.Info("Server is downed.")
+	logger.Info("role " + cfg.Env.APP_ROLE + " stopped")
+	return 0
 }

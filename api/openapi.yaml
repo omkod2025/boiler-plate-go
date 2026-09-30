@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: boiler-plate-go
+  version: 1.0.0
+  description: >
+    Contract ตัวอย่างของ categories. Contract เป็นต้นฉบับ: type ของ request/response generate ด้วย
+    oapi-codegen (`make generate`) ห้ามเขียน type ซ้ำด้วยมือใน feature ใหม่
+paths:
+  /api/categories:
+    get:
+      operationId: listCategories
+      responses:
+        '200':
+          description: หมวดหมู่ของผู้ใช้
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success, status, statusCode, message, result]
+                properties:
+                  success: {type: boolean}
+                  status: {type: string}
+                  statusCode: {type: integer}
+                  message: {type: string}
+                  result:
+                    type: array
+                    items: {$ref: '#/components/schemas/Category'}
+    post:
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateCategory'}
+      responses:
+        '200':
+          description: สร้างแล้ว
+components:
+  schemas:
+    CategoryType:
+      type: string
+      enum: [income, expense, both]
+    Category:
+      type: object
+      required: [id, name, color, icon, type, createdAt, updatedAt]
+      properties:
+        id: {type: integer}
+        name: {type: string}
+        color: {type: string}
+        icon: {type: string}
+        type: {$ref: '#/components/schemas/CategoryType'}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    CreateCategory:
+      type: object
+      required: [name, color, icon, type]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 100}
+        color: {type: string, maxLength: 20}
+        icon: {type: string, maxLength: 16}
+        type: {$ref: '#/components/schemas/CategoryType'}

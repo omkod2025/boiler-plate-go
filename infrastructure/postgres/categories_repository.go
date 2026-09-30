@@ -62,7 +62,7 @@ func NewCategoryRepository(db *pkgsql.PGX) *CategoryRepository {
 
 func (r *CategoryRepository) ListByUser(ctx context.Context, userProfileID int) ([]categories.Category, error) {
 	fncName := "repo categories ListByUser"
-	rows, err := r.db.Query(ctx, `SELECT `+categoryColumns+` FROM oktf_category_get($1);`, userProfileID)
+	rows, err := r.db.Query(ctx, `SELECT `+categoryColumns+` FROM public.oktf_category_get($1)`, userProfileID)
 	if err != nil {
 		slog.Error(fncName, "err", err)
 		return nil, err
@@ -81,11 +81,12 @@ func (r *CategoryRepository) ListByUser(ctx context.Context, userProfileID int) 
 }
 
 func (r *CategoryRepository) Create(ctx context.Context, c categories.Category) (categories.Category, error) {
-	return scanCategory(r.db.QueryRowWithContext(ctx, `
-        INSERT INTO okdt_categories(category_name, user_profile_id, color, icon, category_type)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING `+categoryColumns,
-		c.Name, c.UserProfileID, c.Color, c.Icon, string(c.Type)))
+	err := r.db.QueryRowWithContext(ctx, `CALL public.oktp_category_insert($1, $2, $3, $4, $5, NULL, NULL, NULL)`,
+		c.Name, c.UserProfileID, c.Color, c.Icon, string(c.Type)).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
+	if err != nil {
+		return categories.Category{}, err
+	}
+	return c, nil
 }
 
 func (r *CategoryRepository) Update(ctx context.Context, userProfileID, id int, in categories.UpdateInput) (categories.Category, error) {
@@ -94,25 +95,32 @@ func (r *CategoryRepository) Update(ctx context.Context, userProfileID, id int, 
 		t := string(*in.Type)
 		categoryType = &t
 	}
-	return scanCategory(r.db.QueryRowWithContext(ctx, `
-        UPDATE okdt_categories SET
-          category_name = COALESCE($3, category_name),
-          color = COALESCE($4, color),
-          icon = COALESCE($5, icon),
-          category_type = COALESCE($6, category_type),
-          updated_at = now()
-        WHERE category_id = $1 AND user_profile_id = $2
-        RETURNING `+categoryColumns,
-		id, userProfileID, in.Name, in.Color, in.Icon, categoryType))
+	// ไม่พบ หรือเป็นของผู้ใช้อื่น → procedure คืน OUT ทุกตัวเป็น NULL
+	var row categoryRow
+	err := r.db.QueryRowWithContext(ctx,
+		`CALL public.oktp_category_update($1, $2, $3, $4, $5, $6, NULL, NULL, NULL, NULL, NULL, NULL, NULL)`,
+		id, userProfileID, in.Name, in.Color, in.Icon, categoryType).
+		Scan(&row.CategoryID, &row.CategoryName, &row.Color, &row.Icon, &row.CategoryType, &row.CreatedAt, &row.UpdatedAt)
+	if err != nil {
+		return categories.Category{}, err
+	}
+	if !row.CategoryID.Valid {
+		return categories.Category{}, categories.ErrNotFound
+	}
+	return categories.Category{
+		ID: int(row.CategoryID.Int64), UserProfileID: userProfileID, Name: row.CategoryName.String,
+		Color: row.Color.String, Icon: row.Icon.String, Type: categories.Type(row.CategoryType.String),
+		CreatedAt: row.CreatedAt.Time, UpdatedAt: row.UpdatedAt.Time,
+	}, nil
 }
 
 func (r *CategoryRepository) Delete(ctx context.Context, userProfileID, id int) error {
-	var deletedID int
-	err := r.db.QueryRowWithContext(ctx,
-		`DELETE FROM okdt_categories WHERE category_id = $1 AND user_profile_id = $2 RETURNING category_id`,
-		id, userProfileID).Scan(&deletedID)
-	if errors.Is(err, pgx.ErrNoRows) {
+	var deleted bool
+	if err := r.db.QueryRowWithContext(ctx, `CALL public.oktp_category_delete($1, $2, NULL)`, id, userProfileID).Scan(&deleted); err != nil {
+		return err
+	}
+	if !deleted {
 		return categories.ErrNotFound
 	}
-	return err
+	return nil
 }

@@ -1,5 +1,10 @@
 # PostgreSQL Package Documentation
 
+> **กติกาการเข้าถึงข้อมูล:** runtime ไม่อ่าน/เขียนตารางตรง — อ่านผ่าน function (`SELECT ... FROM schema.<fn>($1)`)
+> และเขียนผ่าน procedure (`CALL schema.<proc>(...)` อ่านค่ากลับจาก OUT parameters) โดย procedure ไม่ `COMMIT` เอง
+> ให้ caller คุม transaction · SQL ของตารางอยู่ใน `migrations/` เท่านั้น · SQL ดิบในตัวอย่างด้านล่างมีไว้อธิบาย API ของ
+> wrapper นี้ ตัวอย่างที่ถูกต้องตามกติกาอยู่ใน [example.go](example.go) และ `infrastructure/postgres/`
+
 Package สำหรับจัดการการเชื่อมต่อและ operations กับ PostgreSQL database ใช้ pgx driver
 
 ## Features

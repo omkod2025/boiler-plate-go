@@ -23,7 +23,7 @@ func NewCredentialRepository(db *pkgsql.PGX) *CredentialRepository {
 func (r *CredentialRepository) FindByEmail(ctx context.Context, email string) (auth.Credential, error) {
 	var c auth.Credential
 	err := r.db.QueryRowWithContext(ctx,
-		`SELECT user_profile_id, password_hash, role FROM okdt_user_profiles WHERE email = $1`, email).
+		`SELECT user_profile_id, password_hash, role FROM public.oktf_user_credential_get($1)`, email).
 		Scan(&c.UserID, &c.PasswordHash, &c.Role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return auth.Credential{}, auth.ErrCredentialNotFound

@@ -42,16 +42,8 @@ func NewMasterCategoryRepository(db *pkgsql.PGX) *MasterCategoryRepository {
 }
 
 func (r *MasterCategoryRepository) List(ctx context.Context) ([]categories.MasterCategory, error) {
-	rows, err := r.db.Query(ctx, `SELECT
-        category_id,
-        category_name,
-        color,
-        icon,
-        category_type,
-        created_at,
-        updated_at
-      FROM okdt_master_categories
-      ORDER BY category_name`)
+	rows, err := r.db.Query(ctx, `SELECT category_id, category_name, color, icon, category_type, created_at, updated_at
+      FROM public.oktf_master_category_list()`)
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +60,7 @@ func (r *MasterCategoryRepository) List(ctx context.Context) ([]categories.Maste
 }
 
 func (r *MasterCategoryRepository) Create(ctx context.Context, c categories.MasterCategory) (categories.MasterCategory, error) {
-	var row masterCategoryRow
-	err := r.db.QueryRowWithContext(ctx, `
-        INSERT INTO okdt_master_categories(category_name, color, icon, category_type)
-        VALUES ($1, $2, $3, $4)
-        RETURNING category_id, category_name, color, icon, category_type, created_at, updated_at
-    `, c.Name, c.Color, c.Icon, string(c.Type)).Scan(&row.CategoryID, &row.CategoryName, &row.Color, &row.Icon, &row.CategoryType, &row.CreatedAt, &row.UpdatedAt)
-	return row.toEntity(), err
+	err := r.db.QueryRowWithContext(ctx, `CALL public.oktp_master_category_insert($1, $2, $3, $4, NULL, NULL, NULL)`,
+		c.Name, c.Color, c.Icon, string(c.Type)).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
+	return c, err
 }

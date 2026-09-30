@@ -52,11 +52,22 @@ func Connect(ctx context.Context, config PGXConfig) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
-	poolConfig.MaxConns = int32(config.DB_MAX_CONNS)
-	poolConfig.MinConns = int32(config.DB_MIN_CONNS)
-	poolConfig.MaxConnLifetime = config.DB_MAX_CONN_LIFETIME
-	poolConfig.MaxConnIdleTime = config.DB_MAX_CONN_IDLE_TIME
-	poolConfig.HealthCheckPeriod = config.DB_HEALTH_CHECK_PERIOD
+	// ค่า 0 = ใช้ค่าเริ่มต้นของ pgx (HealthCheckPeriod เป็น 0 จะ panic ใน pgxpool)
+	if config.DB_MAX_CONNS > 0 {
+		poolConfig.MaxConns = int32(min(config.DB_MAX_CONNS, 1<<15)) // #nosec G115 -- clamped
+	}
+	if config.DB_MIN_CONNS > 0 {
+		poolConfig.MinConns = int32(min(config.DB_MIN_CONNS, 1<<15)) // #nosec G115 -- clamped
+	}
+	if config.DB_MAX_CONN_LIFETIME > 0 {
+		poolConfig.MaxConnLifetime = config.DB_MAX_CONN_LIFETIME
+	}
+	if config.DB_MAX_CONN_IDLE_TIME > 0 {
+		poolConfig.MaxConnIdleTime = config.DB_MAX_CONN_IDLE_TIME
+	}
+	if config.DB_HEALTH_CHECK_PERIOD > 0 {
+		poolConfig.HealthCheckPeriod = config.DB_HEALTH_CHECK_PERIOD
+	}
 	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
 		return nil, err

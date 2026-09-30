@@ -10,18 +10,8 @@ import (
 	pkgsql "github.com/omkod2025/boiler-plate-go/pkg/sql"
 )
 
-// ตัวอย่าง schema ที่ repository นี้คาดหวัง:
-//
-//	CREATE TABLE okdt_user_profiles (
-//	  user_profile_id SERIAL PRIMARY KEY,
-//	  email           TEXT NOT NULL UNIQUE,
-//	  full_name       TEXT NOT NULL,
-//	  password_hash   TEXT NOT NULL,
-//	  role            TEXT NOT NULL DEFAULT 'user',
-//	  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-//	  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
-//	);
-const userColumns = `user_profile_id, email, full_name, password_hash, role, created_at, updated_at`
+// Repository ใน package นี้ไม่อ่าน/เขียนตารางตรง: อ่านผ่าน function oktf_* ด้วย SELECT และเขียนผ่าน
+// procedure oktp_* ด้วย CALL (ผลลัพธ์มาจาก OUT parameters) — schema และ routine อยู่ใน migrations/
 
 const pgUniqueViolation = "23505"
 
@@ -51,18 +41,18 @@ func NewUserRepository(db *pkgsql.PGX) *UserRepository {
 
 func (r *UserRepository) GetByID(ctx context.Context, id int) (users.User, error) {
 	return scanUser(r.db.QueryRowWithContext(ctx,
-		`SELECT `+userColumns+` FROM okdt_user_profiles WHERE user_profile_id = $1`, id))
+		`SELECT user_profile_id, email, full_name, password_hash, role, created_at, updated_at FROM public.oktf_user_get($1)`, id))
 }
 
 func (r *UserRepository) Create(ctx context.Context, u users.User) (users.User, error) {
-	created, err := scanUser(r.db.QueryRowWithContext(ctx, `
-        INSERT INTO okdt_user_profiles(email, full_name, password_hash, role)
-        VALUES ($1, $2, $3, $4)
-        RETURNING `+userColumns,
-		u.Email, u.Name, u.PasswordHash, string(u.Role)))
+	err := r.db.QueryRowWithContext(ctx, `CALL public.oktp_user_insert($1, $2, $3, $4, NULL, NULL, NULL)`,
+		u.Email, u.Name, u.PasswordHash, string(u.Role)).Scan(&u.ID, &u.CreatedAt, &u.UpdatedAt)
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
 		return users.User{}, users.ErrEmailAlreadyExists
 	}
-	return created, err
+	if err != nil {
+		return users.User{}, err
+	}
+	return u, nil
 }
