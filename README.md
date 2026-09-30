@@ -14,13 +14,13 @@ Boilerplate สำหรับเริ่มต้น REST API service ด้�
 
 ### สิ่งที่ต้องมี
 
-- Go 1.25.14 ขึ้นไป (ตาม `go.mod`)
+- Go 1.26.8 ขึ้นไป (ตาม `go.mod`)
 - PostgreSQL
 - (ไม่บังคับ) [lefthook](https://github.com/evilmartians/lefthook), [golangci-lint v2](https://golangci-lint.run)
 
 ### 1. เปลี่ยนชื่อ module
 
-boilerplate นี้ใช้ module `github.com/omkod2025-boop/omgon-notification-service` เปลี่ยนเป็นชื่อ service ของคุณก่อน
+boilerplate นี้ใช้ module `github.com/omkod2025/boiler-plate-go` เปลี่ยนเป็นชื่อ service ของคุณก่อน
 
 ```bash
 make change-module NEW_MODULE=github.com/your-org/your-service

@@ -3,9 +3,9 @@ package http
 import (
 	"context"
 
-	"github.com/omkod2025-boop/omgon-notification-service/configs"
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/middleware"
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/routes"
+	"github.com/omkod2025/boiler-plate-go/configs"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/middleware"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/routes"
 
 	"github.com/gin-gonic/gin"
 	apmgin "go.elastic.co/apm/module/apmgin/v2"

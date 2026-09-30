@@ -1,6 +1,6 @@
-module github.com/omkod2025-boop/omgon-notification-service
+module github.com/omkod2025/boiler-plate-go
 
-go 1.25.14
+go 1.26.8
 
 require (
 	github.com/gin-contrib/cors v1.7.6
@@ -11,7 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	go.elastic.co/apm/module/apmgin/v2 v2.7.1
 	go.elastic.co/apm/v2 v2.7.1
-	golang.org/x/crypto v0.39.0
+	golang.org/x/crypto v0.57.0
 	golang.org/x/time v0.12.0
 )
 
@@ -47,10 +47,10 @@ require (
 	go.elastic.co/apm/module/apmhttp/v2 v2.7.1 // indirect
 	go.elastic.co/fastjson v1.5.1 // indirect
 	golang.org/x/arch v0.18.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.39.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect

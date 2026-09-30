@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/omkod2025-boop/omgon-notification-service/domain/users"
-	pkgsql "github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
+	"github.com/omkod2025/boiler-plate-go/domain/users"
+	pkgsql "github.com/omkod2025/boiler-plate-go/pkg/sql"
 )
 
 // ตัวอย่าง schema ที่ repository นี้คาดหวัง:

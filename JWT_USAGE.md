@@ -158,7 +158,7 @@ if err != nil {
 
 ## RSA Key Management
 
-ฟังก์ชันจัดการ key อยู่ใน `pkg/jwt` (import `github.com/omkod2025-boop/omgon-notification-service/pkg/jwt`)
+ฟังก์ชันจัดการ key อยู่ใน `pkg/jwt` (import `github.com/omkod2025/boiler-plate-go/pkg/jwt`)
 
 ### LoadRSAPrivateKey
 ```go

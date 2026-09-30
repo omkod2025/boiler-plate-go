@@ -2,7 +2,7 @@ package configs
 
 import (
 	"context"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
+	"github.com/omkod2025/boiler-plate-go/pkg/sql"
 )
 
 func InitPGXConnection(ctx context.Context, sqlConfig sql.PGXConfig) (*sql.PGX, error) {

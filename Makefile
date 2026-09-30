@@ -5,7 +5,7 @@ help:
 	@echo "Usage: make change-module NEW_MODULE=<new-module-name>"
 	@echo ""
 	@echo "Example:"
-	@echo "  make change-module NEW_MODULE=omgon-api-gateway"
+	@echo "  make change-module NEW_MODULE=github.com/your-org/your-service"
 	@echo ""
 	@echo "This will:"
 	@echo "  1. Update go.mod with the new module name"

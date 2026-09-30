@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/omkod2025-boop/omgon-notification-service/domain/categories"
-	pkgsql "github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
+	"github.com/omkod2025/boiler-plate-go/domain/categories"
+	pkgsql "github.com/omkod2025/boiler-plate-go/pkg/sql"
 )
 
 // masterCategoryRow database model aligned with okdt_master_categories table

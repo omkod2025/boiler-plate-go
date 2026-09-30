@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/omkod2025-boop/omgon-notification-service/domain/auth"
-	pkgsql "github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
+	"github.com/omkod2025/boiler-plate-go/domain/auth"
+	pkgsql "github.com/omkod2025/boiler-plate-go/pkg/sql"
 )
 
 // CredentialRepository implements auth.CredentialRepository โดยอ่านจากตารางผู้ใช้

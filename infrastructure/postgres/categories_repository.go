@@ -7,8 +7,8 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/omkod2025-boop/omgon-notification-service/domain/categories"
-	pkgsql "github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
+	"github.com/omkod2025/boiler-plate-go/domain/categories"
+	pkgsql "github.com/omkod2025/boiler-plate-go/pkg/sql"
 )
 
 const categoryColumns = `category_id, category_name, user_profile_id, color, icon, category_type, created_at, updated_at`

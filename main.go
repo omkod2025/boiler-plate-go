@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"github.com/omkod2025-boop/omgon-notification-service/app"
-	"github.com/omkod2025-boop/omgon-notification-service/configs"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
+	"github.com/omkod2025/boiler-plate-go/app"
+	"github.com/omkod2025/boiler-plate-go/configs"
+	"github.com/omkod2025/boiler-plate-go/pkg/logger"
 	"net/http"
 	"os"
 	"os/signal"

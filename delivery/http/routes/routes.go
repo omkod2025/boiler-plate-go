@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/handler"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/handler"
+	"github.com/omkod2025/boiler-plate-go/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

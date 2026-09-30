@@ -3,8 +3,8 @@ package security
 import (
 	"strconv"
 
-	"github.com/omkod2025-boop/omgon-notification-service/domain/auth"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/jwt"
+	"github.com/omkod2025/boiler-plate-go/domain/auth"
+	"github.com/omkod2025/boiler-plate-go/pkg/jwt"
 )
 
 // JWTTokenIssuer implements auth.TokenIssuer ด้วย JWT แบบ RS256

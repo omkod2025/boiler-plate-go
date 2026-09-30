@@ -1,10 +1,10 @@
 package app
 
 import (
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/handler"
-	"github.com/omkod2025-boop/omgon-notification-service/domain/auth"
-	"github.com/omkod2025-boop/omgon-notification-service/infrastructure/postgres"
-	"github.com/omkod2025-boop/omgon-notification-service/infrastructure/security"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/handler"
+	"github.com/omkod2025/boiler-plate-go/domain/auth"
+	"github.com/omkod2025/boiler-plate-go/infrastructure/postgres"
+	"github.com/omkod2025/boiler-plate-go/infrastructure/security"
 )
 
 // newAuthHandler wiring ของ domain auth: credential repository + password verifier + token issuer -> use case -> handler
