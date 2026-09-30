@@ -3,8 +3,8 @@ package rpc
 import (
 	"context"
 
-	"github.com/omkod2025-boop/omgon-notification-service/configs"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
+	"github.com/omkod2025/boiler-plate-go/configs"
+	"github.com/omkod2025/boiler-plate-go/pkg/logger"
 )
 
 // InitRPCServer เริ่ม RPC server (gRPC/JSON-RPC) — handler ของ RPC ให้วางไว้ใน package นี้

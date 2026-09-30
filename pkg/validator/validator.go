@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
+	"github.com/omkod2025/boiler-plate-go/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -235,7 +235,7 @@ func MapValidationErrors(err error, obj interface{}) error {
 	var msgs []string
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		typ := reflect.TypeOf(obj)
-		if typ.Kind() == reflect.Ptr {
+		if typ.Kind() == reflect.Pointer {
 			typ = typ.Elem()
 		}
 		for _, e := range errs {

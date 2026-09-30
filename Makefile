@@ -1,11 +1,20 @@
-.PHONY: change-module help
+.PHONY: change-module help test generate generate-check migrate-up migrate-create run
+
+GOOSE_VERSION := v3.28.0
 
 # Default target
 help:
+	@echo "make test                        unit + integration test (ต้องมี Docker สำหรับ PostgreSQL/RabbitMQ)"
+	@echo "make generate                    generate type จาก api/openapi.yaml (oapi-codegen)"
+	@echo "make generate-check              fail ถ้าไฟล์ generate ไม่ตรงกับ contract (CI)"
+	@echo "make run ROLE=api                รันด้วย role: api | stream | worker | receiver | sandbox | migrate"
+	@echo "make migrate-up                  รัน migration (role migrate) กับ DB ตาม .env"
+	@echo "make migrate-create NAME=x       สร้างไฟล์ migration ใหม่ใน migrations/"
+	@echo ""
 	@echo "Usage: make change-module NEW_MODULE=<new-module-name>"
 	@echo ""
 	@echo "Example:"
-	@echo "  make change-module NEW_MODULE=omgon-api-gateway"
+	@echo "  make change-module NEW_MODULE=github.com/your-org/your-service"
 	@echo ""
 	@echo "This will:"
 	@echo "  1. Update go.mod with the new module name"
@@ -50,3 +59,23 @@ change-module:
 	echo ""; \
 	echo "Successfully changed module from '$$CURRENT_MODULE' to '$(NEW_MODULE)'"
 
+
+test:
+	go test -race ./...
+
+generate:
+	go generate ./...
+
+generate-check: generate
+	@git diff --exit-code -- delivery/http/gen || { echo "generated code is stale: run make generate and commit"; exit 1; }
+
+ROLE ?= api
+run:
+	go run . -role=$(ROLE)
+
+migrate-up:
+	go run . -role=migrate
+
+migrate-create:
+	@if [ -z "$(NAME)" ]; then echo "Usage: make migrate-create NAME=<name>"; exit 1; fi
+	go run github.com/pressly/goose/v3/cmd/goose@$(GOOSE_VERSION) -dir migrations -s create $(NAME) sql

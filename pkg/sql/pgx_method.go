@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
+	"github.com/omkod2025/boiler-plate-go/pkg/logger"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

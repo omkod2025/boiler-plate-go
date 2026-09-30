@@ -3,7 +3,7 @@ package handler
 import (
 	"time"
 
-	"github.com/omkod2025-boop/omgon-notification-service/domain/categories"
+	"github.com/omkod2025/boiler-plate-go/domain/categories"
 )
 
 // Request DTOs

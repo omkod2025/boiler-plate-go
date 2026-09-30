@@ -20,7 +20,7 @@ pre-commit:
       run: |
         if ! command -v golangci-lint >/dev/null 2>&1; then
           echo "golangci-lint not found. Installing..." >&2
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.5.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.14.0
         fi
         golangci-lint run ./...
 

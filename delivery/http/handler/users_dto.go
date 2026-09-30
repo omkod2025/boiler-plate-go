@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/omkod2025-boop/omgon-notification-service/domain/users"
+	"github.com/omkod2025/boiler-plate-go/domain/users"
 )
 
 // Request DTOs

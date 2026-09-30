@@ -8,9 +8,9 @@ import (
 	"regexp"
 	"strings"
 
-	pkgjwt "github.com/omkod2025-boop/omgon-notification-service/pkg/jwt"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
+	pkgjwt "github.com/omkod2025/boiler-plate-go/pkg/jwt"
+	"github.com/omkod2025/boiler-plate-go/pkg/logger"
+	"github.com/omkod2025/boiler-plate-go/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )

@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/omkod2025-boop/omgon-notification-service/domain/users"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/validator"
+	"github.com/omkod2025/boiler-plate-go/domain/users"
+	"github.com/omkod2025/boiler-plate-go/pkg/response"
+	"github.com/omkod2025/boiler-plate-go/pkg/validator"
 
 	"github.com/gin-gonic/gin"
 )

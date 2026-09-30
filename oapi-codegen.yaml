@@ -1,0 +1,8 @@
+# oapi-codegen v2 config: generate แค่ type (models) จาก api/openapi.yaml ลง delivery/http/gen (output นับจากโฟลเดอร์ของ go:generate)
+# handler เขียนเองตามโครง Clean Architecture แล้วใช้ type เหล่านี้เป็น DTO
+package: gen
+output: types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: false

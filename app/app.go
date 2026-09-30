@@ -3,13 +3,13 @@ package app
 import (
 	"context"
 
-	"github.com/omkod2025-boop/omgon-notification-service/configs"
-	httpdelivery "github.com/omkod2025-boop/omgon-notification-service/delivery/http"
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/routes"
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/rpc"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/jwt"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/logger"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/sql"
+	"github.com/omkod2025/boiler-plate-go/configs"
+	httpdelivery "github.com/omkod2025/boiler-plate-go/delivery/http"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/routes"
+	"github.com/omkod2025/boiler-plate-go/delivery/rpc"
+	"github.com/omkod2025/boiler-plate-go/pkg/jwt"
+	"github.com/omkod2025/boiler-plate-go/pkg/logger"
+	"github.com/omkod2025/boiler-plate-go/pkg/sql"
 
 	"github.com/gin-gonic/gin"
 )

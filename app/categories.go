@@ -1,9 +1,9 @@
 package app
 
 import (
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/handler"
-	"github.com/omkod2025-boop/omgon-notification-service/domain/categories"
-	"github.com/omkod2025-boop/omgon-notification-service/infrastructure/postgres"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/handler"
+	"github.com/omkod2025/boiler-plate-go/domain/categories"
+	"github.com/omkod2025/boiler-plate-go/infrastructure/postgres"
 )
 
 // newCategoriesHandler wiring ของ domain categories: repository -> use case -> handler

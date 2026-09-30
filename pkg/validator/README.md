@@ -34,7 +34,7 @@ import package แล้วใช้ได้เลย ไม่ต้องเ�
 ให้ทั้ง `validator.Validate` และ Gin binding validator อัตโนมัติ
 
 ```go
-import "github.com/omkod2025-boop/omgon-notification-service/pkg/validator"
+import "github.com/omkod2025/boiler-plate-go/pkg/validator"
 ```
 
 ### 1. ใช้กับ Gin handler (แนะนำ)

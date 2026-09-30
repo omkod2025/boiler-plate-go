@@ -3,8 +3,8 @@ package handler
 import (
 	"strconv"
 
-	"github.com/omkod2025-boop/omgon-notification-service/delivery/http/middleware"
-	"github.com/omkod2025-boop/omgon-notification-service/pkg/response"
+	"github.com/omkod2025/boiler-plate-go/delivery/http/middleware"
+	"github.com/omkod2025/boiler-plate-go/pkg/response"
 
 	"github.com/gin-gonic/gin"
 )
